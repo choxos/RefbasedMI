@@ -31,7 +31,8 @@
 #' @param delta Optional vector of delta values to add onto imputed values (non-mandatory) (a's in Five_Macros user guide), length equal to number of time points
 #' @param dlag Optional vector of delta values to add onto imputed values (non-mandatory) (b's in Five_Macros user guide), length equal to number of time points
 #' @param M Number of imputations to be created
-#' @param seed  Seed value: specify this so that a new run of the command will give the same imputed values
+#' @param seed  Optional integer seed for the random number generator. Supply a value to make
+#'   repeated runs reproducible; if `NULL` (the default) the imputations are random each run.
 #' @param prior  Prior when fitting multivariate normal distributions: can be one of "jeffreys" (default), "uniform" or "ridge"
 #' @param burnin  Number of burn-in iterations when fitting multivariate normal distributions
 #' @param bbetween  Number of iterations between imputed data sets when fitting multivariate normal distributions
@@ -54,7 +55,7 @@
 # mimix<- function(data,covar=NULL,depvar,treatvar,idvar,timevar,M=1,reference=NULL,method=NULL,seed=101,prior="jeffreys",burnin=1000,bbetween=NULL,methodvar=NULL,referencevar=NULL,delta=NULL,dlag=NULL,K0=1,K1=1,mle=FALSE) {
 
 RefBasedMI<- function(data,covar=NULL,depvar,treatvar,idvar,timevar,method=NULL,reference=NULL,methodvar=NULL,referencevar=NULL,
-                 K0=NULL,K1=NULL,delta=NULL,dlag=NULL,M=1,seed=101,prior="jeffreys",burnin=1000,bbetween=NULL,mle=FALSE)
+                 K0=NULL,K1=NULL,delta=NULL,dlag=NULL,M=1,seed=NULL,prior="jeffreys",burnin=1000,bbetween=NULL,mle=FALSE)
   {
 
   # test if "data set does not exist!!"
@@ -245,7 +246,9 @@ RefBasedMI<- function(data,covar=NULL,depvar,treatvar,idvar,timevar,method=NULL,
   }
 
 
-  set.seed(seed)
+  # only fix the RNG state when the user supplies a seed, so that repeated runs
+  # are reproducible on request but independent by default
+  if (!is.null(seed)) { set.seed(seed) }
 
 
   # assign all characters in meth to UPPER case

@@ -20,7 +20,7 @@ RefBasedMI(
   delta = NULL,
   dlag = NULL,
   M = 1,
-  seed = 101,
+  seed = NULL,
   prior = "jeffreys",
   burnin = 1000,
   bbetween = NULL,
