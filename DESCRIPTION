@@ -1,5 +1,5 @@
 Package: RefBasedMI
-Title: Reference-Based Imputation for Longitudinal Clinical Trials with Protocol Deviation 
+Title: Reference-Based Imputation for Longitudinal Clinical Trials with Protocol Deviation
 Version: 0.2.0
 Authors@R: c(person(given = "Kevin",
                       family = "McGrath",
@@ -25,8 +25,9 @@ Description: Imputation of missing numerical outcomes for a longitudinal trial
     missing at random (MAR) and the last mean carried forward (LMCF). 
     Individual-specific imputation methods
     (and their reference groups) can be specified.  
-URL: https://github.com/UCL/RefBasedMI 
-License: GPL-3 
+URL: https://github.com/choxos/RefbasedMI
+BugReports: https://github.com/choxos/RefbasedMI/issues
+License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Imports:
@@ -35,7 +36,12 @@ Imports:
   mice,
   pastecs,
   assertthat
+Suggests:
+  testthat (>= 3.0.0),
+  knitr,
+  rmarkdown
 Depends: R (>= 3.5.0)
 NeedsCompilation: yes
+Config/testthat/edition: 3
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3

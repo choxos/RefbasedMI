@@ -2,7 +2,10 @@
 .Rhistory
 .RData
 .Ruserdata
+.DS_Store
 inst/doc
-~$*.docx
-~$*.xlsx
+/doc/
+/Meta/
+*.tar.gz
+*.Rcheck/
 test/Ian main testing program.Rout

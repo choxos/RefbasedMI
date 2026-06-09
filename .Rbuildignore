@@ -1,2 +1,14 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^\.github$
+^dev$
+^test$
+^LICENSE$
+^MRCCTU_at_UCL_Logo\.png$
+^README\.md$
+^cran-comments\.md$
+^doc$
+^Meta$
+^.*\.tar\.gz$
+^.*\.Rcheck$
+(^|/)\.DS_Store$
