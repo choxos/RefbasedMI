@@ -310,7 +310,7 @@ RefBasedMI<- function(data,covar=NULL,depvar,treatvar,idvar,timevar,method=NULL,
 
   #create input data sets for each treatment from which to model
 
-  for (val in 1:length(ntreat)) {
+  for (val in seq_along(ntreat)) {
     assign(paste0("prenormdat",val),subset(finaldatS,finaldatS[,treatvar]==val))
   }
 
@@ -334,7 +334,7 @@ RefBasedMI<- function(data,covar=NULL,depvar,treatvar,idvar,timevar,method=NULL,
   # create emptylist for each treat and multiple m's
 
   paramBiglist <- vector('list',length(ntreat)*M)
-  for (val in 1:length(ntreat)) {
+  for (val in seq_along(ntreat)) {
     assign(paste0("paramBiglist",val),vector('list',M))
   }
   # create a matrix ntreat by M dimension to store paramBiglists
@@ -346,7 +346,7 @@ RefBasedMI<- function(data,covar=NULL,depvar,treatvar,idvar,timevar,method=NULL,
 
   message(paste0("\nFitting multivariate normal model by ",treatvar,":\n ") )
 
-  for (val in 1:length(ntreat)) {
+  for (val in seq_along(ntreat)) {
 
     kmvar=get(paste0("prenormdat",val))
     prnormobj<-assign(paste0("prnormobj",val), subset(kmvar, select=c(tst2)))
@@ -885,17 +885,20 @@ RefBasedMI<- function(data,covar=NULL,depvar,treatvar,idvar,timevar,method=NULL,
     mata_Obs<- finaldatSS
   }
 
-  colx<-grep(treatvar,colnames(mata_Obs))
+  colx<-match(treatvar,colnames(mata_Obs))
   # check if not already last
-  if (colx<length(mata_Obs)) {
-    mata_Obs.reorder<-mata_Obs[,c(1:(colx-1),(colx+1):length(mata_Obs),colx)]
+  if (colx<ncol(mata_Obs)) {
+    # move treatvar to the last column (setdiff keeps the other columns in order
+    # and is safe when treatvar is the first or last column)
+    mata_Obs.reorder<-mata_Obs[,c(setdiff(seq_len(ncol(mata_Obs)),colx),colx)]
     mata_Obs<-mata_Obs.reorder
   }
-  idcol<- grep(paste0(idvar),colnames(mata_Obs))
+  idcol<- match(idvar,colnames(mata_Obs))
   # id to 1st
   # if not already 1st!
   if (idcol !=1) {
-    mata_Obs.reorder_id<-mata_Obs[,c(idcol,1:(idcol-1),(idcol+1):length(mata_Obs))]
+    # move idvar to the first column (boundary-safe for any original position)
+    mata_Obs.reorder_id<-mata_Obs[,c(idcol,setdiff(seq_len(ncol(mata_Obs)),idcol))]
     # move id to 1st col
     mata_Obs<-mata_Obs.reorder_id
   }
@@ -1123,7 +1126,7 @@ pass2Loop <- function(Imp_Interims,method,mg,ntreat,depvar,covar,treatvar,tmptre
         # needed to edit for antidepressant
         depvarnames<-colnames(ImpInters)[grepl(paste0(depvar,"\\."),colnames(ImpInters))]
         matchseq<-match(ImpInters[,idvar],mata_Obs[,idvar])
-        for (jj in 1:length(matchseq) ) {
+        for (jj in seq_along(matchseq) ) {
           mata_Obs[,depvarnames][matchseq[jj],]<-as.data.frame(ImpInters)[,depvarnames][jj,]
         }
       }
@@ -1410,7 +1413,7 @@ pass2Loop <- function(Imp_Interims,method,mg,ntreat,depvar,covar,treatvar,tmptre
           names(mata_new)[[ncol(mata_new)]] <-idvar
 
           #assume delta to be used if specified in input argument
-          if (length(delta != 0) ) {
+          if (!is.null(delta) && length(delta) > 0 ) {
             ncovar_i<-length(covar)
             if (is.null(dlag)) {
               dlag <- rep(1,length(delta))
@@ -1438,10 +1441,12 @@ pass2Loop <- function(Imp_Interims,method,mg,ntreat,depvar,covar,treatvar,tmptre
   
     test_Imp<-as.data.frame(test_Imp)
   
-    depcolsf<- grep(paste0(depvar),names(impdataset))
+    # anchor to depvar.<time> columns so a covariate whose name shares the
+    # depvar prefix (e.g. depvar "head" vs covariate "head_base") is not matched
+    depcolsf<- grep(paste0("^",depvar,"\\."),names(impdataset))
     # assume  corresponds with interim lookup ! prob need a check here!!
-  
-    for ( pos in 1:length(depcolsf)) {
+
+    for ( pos in seq_along(depcolsf)) {
       # match by .imp and id
       impdataset[,depcolsf[pos]][match(paste(test_Imp[,idvar],test_Imp$.imp),paste(impdataset[,idvar],impdataset$.imp))]<-test_Imp[,depcolsf[pos]]
     }
