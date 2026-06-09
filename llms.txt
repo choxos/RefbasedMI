@@ -1,0 +1,180 @@
+# RefBasedMI
+
+[![MRC Clinical Trials Unit at
+UCL](MRCCTU_at_UCL_Logo.png)](https://www.innovative-ctu.ucl.ac.uk/)
+
+**Reference-based multiple imputation for sensitivity analysis of
+longitudinal trials with protocol deviation.**
+
+## Overview
+
+`RefBasedMI` ports the functionality of the Stata program **mimix** into
+R and adds the Causal model and Delta adjustment. It imputes missing
+numerical outcomes in longitudinal clinical trials under
+treatment-arm-based assumptions about the unobserved data, following the
+algorithm of Carpenter, Roger and Kenward (2013) and the causal model of
+White, Royes and Best (2020).
+
+The **mimix** program is described in:
+
+> Cro S, Morris T P, Kenward M G, Carpenter J R. Reference-based
+> sensitivity analysis via multiple imputation for longitudinal trials
+> with protocol deviation.
+> <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5796638/>
+
+## Installation
+
+``` r
+
+# install.packages("remotes")
+remotes::install_github("choxos/RefbasedMI")
+```
+
+The package contains compiled Fortran, so a working toolchain (Rtools on
+Windows, the standard compilers on macOS/Linux) is required to build
+from source.
+
+## Imputation methods
+
+The five reference-based methods are:
+
+| Method                       | Abbreviation | Reference arm required? |
+|------------------------------|--------------|-------------------------|
+| Missing at random            | MAR          | No                      |
+| Jump to reference            | J2R          | Yes                     |
+| Copy increments in reference | CIR          | Yes                     |
+| Copy reference               | CR           | Yes                     |
+| Last mean carried forward    | LMCF         | No                      |
+
+In the **Causal model**, the treatment effect maintained after
+discontinuation is related to the final on-treatment effect: a constant
+fraction `K0`, decaying geometrically by a factor `K1` (`0 <= K1 <= 1`)
+each period. `K0 = 1, K1 = 0` is equivalent to J2R; `K0 = 1, K1 = 1` is
+equivalent to CIR. See White, Royes and Best (2020),
+<https://www.tandfonline.com/doi/full/10.1080/10543406.2019.1684308>.
+
+In **Delta adjustment**, a user-specified increment is added to values
+imputed after discontinuation (but not to interim missing values), to
+probe departures from the primary assumption. The increment at time *k*
+for a patient who discontinued after time *p* is
+`delta[p+1]*dlag[1] + delta[p+2]*dlag[2] + ... + delta[k]*dlag[k-p]`. A
+common increment of 3 at every post-discontinuation time is obtained
+with `delta = c(3, 3, 3, ...)` and `dlag = c(1, 0, 0, ...)`. See James
+Roger’s SAS “five macros” at
+<https://www.lshtm.ac.uk/research/centres-projects-groups/missing-data#dia-working-group>.
+
+## Quick start
+
+``` r
+
+library(RefBasedMI)
+
+# Jump-to-reference imputation of the asthma trial, reference arm 1
+asthmaJ2R <- RefBasedMI(
+  data = asthma, depvar = fev, treatvar = treat, idvar = id, timevar = time,
+  covar = base, method = "J2R", reference = 1, M = 5, seed = 54321
+)
+```
+
+`seed` defaults to `NULL` (imputations are random each run); pass an
+integer for reproducibility.
+
+### Analysis with Rubin’s rules
+
+The output stacks the original data (`.imp = 0`) above the `M` imputed
+sets. Convert it to a `mids` object with **mice** and pool:
+
+``` r
+
+library(mice)
+fit <- with(as.mids(asthmaJ2R), lm(fev ~ factor(treat), subset = (time == 12)))
+summary(pool(fit))
+```
+
+### Causal model
+
+``` r
+
+acuCausal <- RefBasedMI(
+  data = acupuncture, depvar = head, treatvar = treat, idvar = id, timevar = time,
+  covar = head_base, method = "Causal", reference = 1, K0 = 1, K1 = 0.5,
+  M = 5, seed = 54321
+)
+```
+
+### Delta adjustment
+
+``` r
+
+impDelta <- RefBasedMI(
+  data = asthma, depvar = fev, treatvar = treat, idvar = id, timevar = time,
+  covar = base, method = "J2R", reference = 2,
+  delta = c(-1, 0, 0, 0), M = 5, seed = 101
+)
+```
+
+## Note on individual-specific methods
+
+The `methodvar` / `referencevar` arguments (a different method per
+patient) are **not supported in this release**: the code path can leave
+records unimputed and does not reproduce the corresponding group-level
+imputations, so it raises an error rather than returning partial
+results. To vary the method across subgroups, call
+[`RefBasedMI()`](https://choxos.github.io/RefbasedMI/reference/RefBasedMI.md)
+separately on each subgroup with the group-level `method` and
+`reference` arguments and combine the results.
+
+## Authors
+
+- Kevin McGrath (author)
+- Matteo Quartagno (author, maintainer)
+- Ahmad Sofi-Mahmudi ([ORCID
+  0000-0001-6829-0823](https://orcid.org/0000-0001-6829-0823))
+
+## References
+
+- Carpenter J R, Roger J H, Kenward M G (2013). Analysis of longitudinal
+  trials with protocol deviation. *Journal of Biopharmaceutical
+  Statistics* 23(6), 1352–1371.
+  <https://doi.org/10.1080/10543406.2013.834911>
+- White I R, Royes J, Best N (2020). A causal modelling framework for
+  reference-based imputation and tipping point analysis. *Journal of
+  Biopharmaceutical Statistics* 30(2), 334–350.
+  <https://doi.org/10.1080/10543406.2019.1684308>
+
+## License
+
+GPL-3. The bundled `norm2` Fortran engine is reused under its original
+terms; see `inst/COPYRIGHTS`.
+
+# Package index
+
+## Imputation
+
+The main entry point.
+
+- [`RefBasedMI()`](https://choxos.github.io/RefbasedMI/reference/RefBasedMI.md)
+  : Reference-based multiple imputation of longitudinal clinical trial
+  data
+
+## Datasets
+
+Example clinical trial datasets.
+
+- [`asthma`](https://choxos.github.io/RefbasedMI/reference/asthma.md) :
+  Asthma trial data
+- [`antidepressant`](https://choxos.github.io/RefbasedMI/reference/antidepressant.md)
+  : Antidepressant trial data
+- [`acupuncture`](https://choxos.github.io/RefbasedMI/reference/acupuncture.md)
+  : Acupuncture trial data
+
+# Articles
+
+### Articles
+
+- [1. Getting started with
+  RefBasedMI](https://choxos.github.io/RefbasedMI/articles/RefBasedMI.md):
+- [2. The reference-based imputation
+  methods](https://choxos.github.io/RefbasedMI/articles/methods.md):
+- [3. Sensitivity analysis: the causal model and delta
+  adjustment](https://choxos.github.io/RefbasedMI/articles/causal-and-delta.md):
