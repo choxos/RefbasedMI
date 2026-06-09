@@ -1,0 +1,14 @@
+linters: linters_with_defaults(
+    line_length_linter(120L),
+    commented_code_linter = NULL,
+    object_name_linter = NULL,
+    indentation_linter = NULL,
+    object_usage_linter = NULL
+  )
+exclusions: list(
+    "R/norm2.R",
+    "R/Runmimix.R",
+    "R/proprocess.R",
+    "R/miInference.R",
+    "R/utilities.R"
+  )
