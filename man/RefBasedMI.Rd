@@ -2,7 +2,7 @@
 % Please edit documentation in R/Runmimix.R
 \name{RefBasedMI}
 \alias{RefBasedMI}
-\title{Reference-based multiple imputation of longitudinal data}
+\title{Reference-based multiple imputation of longitudinal clinical trial data}
 \usage{
 RefBasedMI(
   data,
@@ -28,88 +28,171 @@ RefBasedMI(
 )
 }
 \arguments{
-\item{data}{Dataset in long format}
+\item{data}{Data frame of trial data in long format (one row per
+participant-time), sorted by participant.}
 
-\item{covar}{Baseline covariate(s): must be complete (no missing values)}
+\item{covar}{Baseline covariate(s) given as a name or character vector; must be
+complete (no missing values) and numeric or factor. Typically the baseline
+outcome.}
 
-\item{depvar}{Outcome variable}
+\item{depvar}{Continuous outcome variable to be imputed.}
 
-\item{treatvar}{Treatment group variable: can be numeric or character}
+\item{treatvar}{Treatment arm variable; numeric or character.}
 
-\item{idvar}{Participant identifier variable}
+\item{idvar}{Participant identifier variable.}
 
-\item{timevar}{Variable indicating time point for repeated measures}
+\item{timevar}{Variable giving the repeated-measures time point.}
 
-\item{method}{Reference-based imputation method: must be "J2R", "CR", "CIR", "MAR", "Causal" or "LMCF"}
+\item{method}{Group-level imputation method: one of \code{"MAR"}, \code{"J2R"}, \code{"CR"},
+\code{"CIR"}, \code{"LMCF"} or \code{"Causal"} (case-insensitive). Exactly one of \code{method}
+or \code{methodvar} must be supplied.}
 
-\item{reference}{Reference group for "J2R", "CIR", "CR" methods, or control group for causal method: can be numeric or string}
+\item{reference}{Reference arm for \code{"J2R"}, \code{"CIR"}, \code{"CR"} and the control arm
+for \code{"Causal"}; numeric or character matching a level of \code{treatvar}. Required
+for those methods.}
 
-\item{methodvar}{Variable in dataset specifying the individual imputation method.
-Individual-specific methods are not supported in this release (see Details);
-supplying this argument raises an error.}
+\item{methodvar}{Variable specifying a per-participant method. Individual-specific
+methods are not supported in this release (see Details); supplying this raises
+an error.}
 
-\item{referencevar}{Variable in dataset specifying the reference group for the
-individual method. Not supported in this release (see \code{methodvar}).}
+\item{referencevar}{Variable specifying a per-participant reference arm. Not
+supported in this release (see \code{methodvar}).}
 
-\item{K0}{Causal constant for use with Causal method}
+\item{K0}{Causal model constant (the maintained fraction of the treatment
+effect); used with \code{method = "Causal"}.}
 
-\item{K1}{Exponential decaying causal constant for use with Causal method}
+\item{K1}{Causal model decay constant in [0, 1]; the maintained effect decays
+by \code{K1} each period. Used with \code{method = "Causal"}.}
 
-\item{delta}{Optional vector of delta values to add onto imputed values (non-mandatory) (a's in Five_Macros user guide), length equal to number of time points}
+\item{delta}{Optional numeric vector of delta increments (the \emph{a} values of
+Roger's "five macros"), of length equal to the number of time points.}
 
-\item{dlag}{Optional vector of delta values to add onto imputed values (non-mandatory) (b's in Five_Macros user guide), length equal to number of time points}
+\item{dlag}{Optional numeric vector of delta lag weights (the \emph{b} values), of
+length equal to the number of time points; defaults to all ones.}
 
-\item{M}{Number of imputations to be created}
+\item{M}{Number of imputations to create.}
 
-\item{seed}{Optional integer seed for the random number generator. Supply a value to make
-repeated runs reproducible; if \code{NULL} (the default) the imputations are random each run.}
+\item{seed}{Optional integer seed. Supply a value for reproducible imputations;
+if \code{NULL} (the default) the imputations are random each run.}
 
-\item{prior}{Prior when fitting multivariate normal distributions: can be one of "jeffreys" (default), "uniform" or "ridge"}
+\item{prior}{Prior for the multivariate normal fit: \code{"jeffreys"} (default),
+\code{"uniform"} or \code{"ridge"}.}
 
-\item{burnin}{Number of burn-in iterations when fitting multivariate normal distributions}
+\item{burnin}{Number of MCMC burn-in iterations.}
 
-\item{bbetween}{Number of iterations between imputed data sets when fitting multivariate normal distributions}
+\item{bbetween}{Number of MCMC iterations between successive imputed datasets
+(defaults to \code{burnin}).}
 
-\item{mle}{Use with extreme caution: do improper imputation by drawing from the model using the maximum likelihood estimates. This does not allow for uncertainty in the MLEs and invalidates interval estimates from Rubin's rules.}
+\item{mle}{Logical; if \code{TRUE}, impute improperly by drawing from the maximum
+likelihood estimates instead of a posterior draw. Use with extreme caution:
+it ignores parameter uncertainty and invalidates Rubin's-rules intervals.}
 }
 \value{
-A data frame containing the original data stacked above the M imputed data sets. The original ID variable (idvar) is renamed as .id. A new variable .imp indicates the original data (.imp=0) or the imputed data sets (.imp=1,...,M).
+A data frame in long format stacking the original data (\code{.imp = 0})
+above the \code{M} imputed datasets (\verb{.imp = 1, ..., M}). The \code{.imp} column
+identifies the imputation and the participant identifier is retained.
+Observed values are unchanged; only post-discontinuation (and interim)
+missing outcomes are filled in. Pass the result to \code{mice::as.mids()} to
+analyse by Rubin's rules.
 }
 \description{
-Performs reference-based multiple imputation of longitudinal data where data are missing after treatment discontinuation. Methods available are missing at random, jump to reference, copy reference, copy increments in reference, last mean carried forward, the causal model, and delta-adjustment.
+\code{RefBasedMI()} performs reference-based multiple imputation of a continuous
+longitudinal outcome that is missing after treatment discontinuation in a
+randomised clinical trial. It implements the controlled multiple imputation
+methods of Carpenter, Roger and Kenward (2013) -- missing at random (MAR),
+jump to reference (J2R), copy reference (CR), copy increments in reference
+(CIR) and last mean carried forward (LMCF) -- together with the causal model
+of White, Royes and Best (2020) and delta adjustment for sensitivity analysis.
+It is an R port of the Stata program \emph{mimix} by Suzie Cro.
 }
-\details{
-The program works through the following steps:
+\section{Estimands and reference-based imputation}{
+Patients who deviate from the protocol (most commonly by discontinuing
+randomised treatment) often have unobserved post-deviation outcomes. The
+analysis must state what those outcomes are assumed to be. A standard MAR
+analysis assumes a deviating patient would have continued along their own
+arm's trajectory. Reference-based methods instead assume the patient comes to
+resemble a \emph{reference} arm (usually control), which is frequently more
+plausible and more conservative for an experimental treatment.
+}
+
+\section{Algorithm}{
+For each of \code{M} imputations the routine:
 \enumerate{
-\item Set up a summary table based on treatment arm and missing data pattern
-(i.e. which timepoints are unobserved)
-\item Fit a multivariate normal distribution to each treatment arm using MCMC methods in package norm2
-\item Impute all interim missing values under a MAR assumption, looping over treatments and patterns
-\item Impute all post-discontinuation missing values under the user-specified assumption,
-looping over treatments and patterns (and over methodvar and referencevar if specified)
-\item Perform delta-adjustment if specified
-\item Repeat steps 2-5 M times and form into a single data frame
+\item builds a summary table of treatment arm by missing-data pattern;
+\item fits a multivariate normal distribution to each arm by MCMC (the
+bundled \code{norm2} engine);
+\item imputes interim (non-monotone) missing values under MAR;
+\item imputes post-discontinuation (monotone) missing values under the
+chosen \code{method}, constructing each patient's conditional mean from the
+relevant arm and reference-arm means;
+\item applies delta adjustment if requested.
+}
+The \code{M} completed datasets are stacked with the original data into one long
+data frame for analysis by Rubin's rules.
 }
 
-The baseline value of the outcome could be handed as an outcome, but this would allow a treatment effect at baseline. We instead recommend handling it as a covariate.
-
-The program is based on Suzie Cro's Stata program mimix
-
-The user can use the as.mids() function in the mice package to convert the output data to mids data type and then perform analysis using Rubin's rules.
-
-Individual-specific imputation methods (arguments \code{methodvar} and
-\code{referencevar}) are not supported in this release: the code path can
-leave records unimputed and does not reproduce the corresponding group-level
-imputations, so it is disabled rather than allowed to return partial results.
-To vary the method across subgroups, call \code{RefBasedMI()} separately on
-each subgroup with the group-level \code{method} and \code{reference}
-arguments and combine the results.
+\section{Methods}{
+Writing the patient's own-arm and reference-arm mean trajectories as
+\eqn{\mu} and \eqn{\mu^{ref}}, the post-discontinuation conditional mean is:
+\describe{
+\item{\code{"MAR"}}{own-arm mean \eqn{\mu}; no reference required.}
+\item{\code{"J2R"}}{jumps to the reference mean \eqn{\mu^{ref}} from the first
+missing visit.}
+\item{\code{"CR"}}{follows the reference mean \eqn{\mu^{ref}} throughout.}
+\item{\code{"CIR"}}{retains the treatment increment achieved up to deviation,
+then accrues reference-arm increments thereafter.}
+\item{\code{"LMCF"}}{carries the last observed mean forward; no reference required.}
+\item{\code{"Causal"}}{maintains a fraction of the last on-treatment effect that
+decays geometrically: the effect at lag \eqn{k} is multiplied by
+\eqn{K0 \times K1^{k}}. \verb{K0 = 1, K1 = 0} reproduces J2R and \verb{K0 = 1, K1 = 1}
+reproduces CIR.}
 }
+}
+
+\section{Delta adjustment}{
+Delta adjustment adds an increment to each post-discontinuation imputed value
+(but not to interim missing values). For a patient who discontinued after time
+\eqn{p}, the increment at time \eqn{k} is
+\eqn{\delta_{p+1} d_1 + \delta_{p+2} d_2 + \dots + \delta_k d_{k-p}}, where
+\eqn{\delta} = \code{delta} and \eqn{d} = \code{dlag}.
+}
+
+\section{Practical notes}{
+Supply the baseline outcome as a covariate (\code{covar}) rather than as an outcome
+value, so that no treatment effect is assumed at baseline. Convert the output
+with \code{mice::as.mids()} to analyse it by Rubin's rules.
+
+Individual-specific imputation methods (\code{methodvar} and \code{referencevar}) are not
+supported in this release: the code path can leave records unimputed and does
+not reproduce the corresponding group-level imputations, so it raises an error
+rather than returning partial results. To vary the method across subgroups,
+call \code{RefBasedMI()} separately on each subgroup and combine the results.
+}
+
 \examples{
-# Jump-to-reference imputation of the asthma trial, with reference arm 1
+# Jump-to-reference imputation of the asthma trial, reference arm 1
 asthmaJ2R <- RefBasedMI(data = asthma, depvar = fev, treatvar = treat,
   idvar = id, timevar = time, covar = base, method = "J2R", reference = 1,
   M = 2, seed = 54321)
+
+# Missing at random (no reference arm needed)
+asthmaMAR <- RefBasedMI(data = asthma, depvar = fev, treatvar = treat,
+  idvar = id, timevar = time, covar = base, method = "MAR", M = 2, seed = 54321)
+
+# Copy increments in reference
+asthmaCIR <- RefBasedMI(data = asthma, depvar = fev, treatvar = treat,
+  idvar = id, timevar = time, covar = base, method = "CIR", reference = 1,
+  M = 2, seed = 54321)
+
+# Causal model: half the treatment effect retained, decaying by 0.5 per period
+asthmaCausal <- RefBasedMI(data = asthma, depvar = fev, treatvar = treat,
+  idvar = id, timevar = time, covar = base, method = "Causal", reference = 1,
+  K0 = 1, K1 = 0.5, M = 2, seed = 54321)
+
+# Delta adjustment: shift post-discontinuation imputations down by 1 unit
+asthmaDelta <- RefBasedMI(data = asthma, depvar = fev, treatvar = treat,
+  idvar = id, timevar = time, covar = base, method = "J2R", reference = 2,
+  delta = c(-1, 0, 0, 0), dlag = c(1, 1, 1, 1), M = 2, seed = 54321)
 
 # Analyse the imputations with Rubin's rules via the mice package
 \donttest{
@@ -119,4 +202,20 @@ if (requireNamespace("mice", quietly = TRUE)) {
   summary(mice::pool(fit))
 }
 }
+}
+\references{
+Carpenter J R, Roger J H, Kenward M G (2013). Analysis of longitudinal trials
+with protocol deviation: a framework for relevant, accessible assumptions, and
+inference via multiple imputation. \emph{Journal of Biopharmaceutical Statistics}
+23(6), 1352--1371. \doi{10.1080/10543406.2013.834911}
+
+White I R, Royes J, Best N (2020). A causal modelling framework for
+reference-based imputation and tipping point analysis in clinical trials with
+quantitative outcome. \emph{Journal of Biopharmaceutical Statistics} 30(2),
+334--350. \doi{10.1080/10543406.2019.1684308}
+}
+\seealso{
+\code{\link[mice:as.mids]{mice::as.mids()}} and \code{\link[mice:pool]{mice::pool()}} for analysing the output;
+the package vignettes \code{vignette("RefBasedMI")}, \code{vignette("methods")} and
+\code{vignette("causal-and-delta")} for worked examples.
 }
