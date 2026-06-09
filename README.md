@@ -1,4 +1,4 @@
-<a href ="https://www.innovative-ctu.ucl.ac.uk/"><img src="MRCCTU_at_UCL_Logo.png" width="50%" /></a>
+<a href ="https://www.innovative-ctu.ucl.ac.uk/"><img src="MRCCTU_at_UCL_Logo.png" width="50%" alt="MRC Clinical Trials Unit at UCL" /></a>
 
 # RefBasedMI
 

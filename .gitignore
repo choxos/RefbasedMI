@@ -5,6 +5,7 @@
 .DS_Store
 inst/doc
 /doc/
+/docs/
 /Meta/
 *.tar.gz
 *.Rcheck/

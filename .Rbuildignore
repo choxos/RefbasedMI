@@ -12,4 +12,7 @@
 ^.*\.tar\.gz$
 ^.*\.Rcheck$
 ^\.lintr$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
 (^|/)\.DS_Store$
