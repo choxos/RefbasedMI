@@ -148,9 +148,9 @@ preprodata <-
     sts4Dpatt$X1 <- 1
 
     ex1 <-
-      Hmisc::summarize(sts4Dpatt$X1,
-                       by = Hmisc::llist(sts4Dpatt[, treatvar], sts4Dpatt$patt),
-                       FUN = sum)
+      group_summarize(sts4Dpatt$X1,
+                      by = list(sts4Dpatt[, treatvar], sts4Dpatt$patt),
+                      FUN = sum)
     # to rename
     newnames <- c(treatvar, "patt", "X1")
     names(ex1) <- newnames
@@ -339,9 +339,9 @@ preproIndivdata <-
     sts4Dpatt$X1 <- 1
 
     ex1 <-
-      Hmisc::summarize(
+      group_summarize(
         sts4Dpatt$X1,
-        by = Hmisc::llist(sts4Dpatt[, treatvar], sts4Dpatt[, methodvar], sts4Dpatt[, referencevar], sts4Dpatt$patt),
+        by = list(sts4Dpatt[, treatvar], sts4Dpatt[, methodvar], sts4Dpatt[, referencevar], sts4Dpatt$patt),
         FUN = sum
       )
     # to rename

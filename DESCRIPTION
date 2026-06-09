@@ -31,12 +31,10 @@ License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Imports:
-  data.table,
-  Hmisc,
-  mice,
-  pastecs,
-  assertthat
+  stats,
+  utils
 Suggests:
+  mice,
   testthat (>= 3.0.0),
   knitr,
   rmarkdown
