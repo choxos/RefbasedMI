@@ -11,4 +11,5 @@
 ^Meta$
 ^.*\.tar\.gz$
 ^.*\.Rcheck$
+^\.lintr$
 (^|/)\.DS_Store$
