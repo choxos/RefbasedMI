@@ -1,0 +1,24 @@
+url: https://choxos.github.io/RefbasedMI/
+
+template:
+  bootstrap: 5
+
+reference:
+- title: Imputation
+  desc: The main entry point.
+  contents:
+  - RefBasedMI
+- title: Datasets
+  desc: Example clinical trial datasets.
+  contents:
+  - asthma
+  - antidepressant
+  - acupuncture
+
+articles:
+- title: Articles
+  navbar: ~
+  contents:
+  - RefBasedMI
+  - methods
+  - causal-and-delta

@@ -28,7 +28,7 @@ Description: Imputation of missing numerical outcomes for a longitudinal trial
     and the causal model, all of which must specify the reference treatment arm.
     Other methods are
     missing at random (MAR) and the last mean carried forward (LMCF).
-URL: https://github.com/choxos/RefbasedMI
+URL: https://github.com/choxos/RefbasedMI, https://choxos.github.io/RefbasedMI/
 BugReports: https://github.com/choxos/RefbasedMI/issues
 License: GPL-3
 Encoding: UTF-8
