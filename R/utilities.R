@@ -88,15 +88,6 @@ Causal_loop <- function(c_mata_miss, mata_Means, MeansC, K0, K1) {
 
 
 
-analyselist <- function(id, datlist, varlist) {
-  datano <- subset(datlist, id == datlist$.id)
-  message(paste0("\ncase = ", id))
-  message(paste0("\n treatarm = ", subset(datano$treat, datano$.imp == 0), "\n"))
-  # numbers denote the descriptive stats to display
-  t(round(pastecs::stat.desc(datano)[, varlist], 8)[c(1, 9, 13, 4, 8, 5), ])
-}
-
-
 
 AddDelta <- function(vec_tst, covar, mata_imp, delta, dlag) {
  

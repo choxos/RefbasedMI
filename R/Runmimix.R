@@ -58,7 +58,7 @@ RefBasedMI<- function(data,covar=NULL,depvar,treatvar,idvar,timevar,method=NULL,
   {
 
   # test if "data set does not exist!!"
-  assertthat::assert_that( length(get("data"))>0 )
+  if ( length(get("data")) == 0 ) { stop("data is empty") }
 
   if  (!any((class(get("data"))) == "data.frame")) {stop("data must be type dataframe")}
 
@@ -832,7 +832,7 @@ RefBasedMI<- function(data,covar=NULL,depvar,treatvar,idvar,timevar,method=NULL,
       sts4Dpatt$X1<-1
       finaldatSS <-sts4Dpatt[order(sts4Dpatt[,treatvar],sts4Dpatt$patt),]
       
-      ex1<-Hmisc::summarize(finaldatSS$X1, by=Hmisc::llist(finaldatSS[,treatvar],finaldatSS$patt),FUN=sum)
+      ex1<-group_summarize(finaldatSS$X1, by=list(finaldatSS[,treatvar],finaldatSS$patt),FUN=sum)
       newnames <- c( treatvar,"patt","X1")
       names(ex1)<-newnames
       ex1$X1cum <- cumsum(ex1$X1)
@@ -1530,8 +1530,7 @@ fillinterims<- function(impdata,interims,Mimp=M,idvar,covar ) {
 
   # make sure impdata sorted by patient number then no worries about sorting by set key
 
-  impMarint_dt <- data.table::as.data.table(impdata)
-  interims_dt <- data.table::as.data.table(interims)
+  impMarint_dt <- as.data.frame(impdata)
 
   # no need merge empty interims
   if (nrow(interims) !=0 ) {
