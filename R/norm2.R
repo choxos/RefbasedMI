@@ -1265,7 +1265,7 @@ logpostNorm.formula <- function( formula, data, param,
 #######################################################################
 loglikNorm <- function(obj, ...){
    # S3 generic function
-   UseMethod("logpostNorm")}
+   UseMethod("loglikNorm")}
 #######################################################################
 loglikNorm.default <- function(obj, x=NULL, intercept=TRUE,
    param, ...){
