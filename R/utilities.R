@@ -76,7 +76,10 @@ Causal_loop <- function(c_mata_miss, mata_Means, MeansC, K0, K1) {
       else {
         v_t <- as.numeric(sub(".*\\.", "", colnames(mata_means[lastvisit])))
       }
-      mata_means[c_mata_miss[b]] <- MeansC[[1]][c_mata_miss[b]] + K0 * (K1^(v_u - v_t)) * (mata_means[lastvisit] - MeansC[[1]][lastvisit])
+      # use [[ ]] to pull the scalar value of the last observed visit; single-bracket
+      # indexing returns a one-column data.frame and pushes the arithmetic through
+      # Ops.data.frame, which fails when the frame carries a single character row name
+      mata_means[c_mata_miss[b]] <- MeansC[[1]][c_mata_miss[b]] + K0 * (K1^(v_u - v_t)) * (mata_means[[lastvisit]] - MeansC[[1]][lastvisit])
     } # if not interim
   }
 
