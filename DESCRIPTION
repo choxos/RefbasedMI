@@ -1,6 +1,6 @@
 Package: RefBasedMI
 Title: Reference-Based Imputation for Longitudinal Clinical Trials with Protocol Deviation
-Version: 0.2.0
+Version: 0.3.0
 Authors@R: c(person(given = "Kevin",
                       family = "McGrath",
                       role = "aut",
