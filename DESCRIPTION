@@ -8,7 +8,12 @@ Authors@R: c(person(given = "Kevin",
                person(given = "Matteo",
                       family = "Quartagno",
                       role = "cre",
-                      email = "m.quartagno@ucl.ac.uk"))
+                      email = "m.quartagno@ucl.ac.uk"),
+               person(given = "Ahmad",
+                      family = "Sofi-Mahmudi",
+                      role = "aut",
+                      email = "a.sofimahmudi@gmail.com",
+                      comment = c(ORCID = "0000-0001-6829-0823")))
 Description: Imputation of missing numerical outcomes for a longitudinal trial 
     with protocol deviations.
     The package uses distinct treatment arm-based assumptions for the unobserved data, following 
@@ -22,9 +27,7 @@ Description: Imputation of missing numerical outcomes for a longitudinal trial
     copy increments in reference (CIR), copy reference (CR),
     and the causal model, all of which must specify the reference treatment arm.
     Other methods are
-    missing at random (MAR) and the last mean carried forward (LMCF). 
-    Individual-specific imputation methods
-    (and their reference groups) can be specified.  
+    missing at random (MAR) and the last mean carried forward (LMCF).
 URL: https://github.com/choxos/RefbasedMI
 BugReports: https://github.com/choxos/RefbasedMI/issues
 License: GPL-3
@@ -42,4 +45,4 @@ Depends: R (>= 3.5.0)
 NeedsCompilation: yes
 Config/testthat/edition: 3
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
+Config/roxygen2/version: 8.0.0

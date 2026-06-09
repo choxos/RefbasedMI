@@ -14,18 +14,27 @@
 #' @details The baseline value of the outcome could be handed as an outcome, but this would allow a treatment effect at baseline. We instead recommend handling it as a covariate.
 #' @details The program is based on Suzie Cro's Stata program mimix
 #' @details The user can use the as.mids() function in the mice package to convert the output data to mids data type and then perform analysis using Rubin's rules.
+#' @details Individual-specific imputation methods (arguments \code{methodvar} and
+#'   \code{referencevar}) are not supported in this release: the code path can
+#'   leave records unimputed and does not reproduce the corresponding group-level
+#'   imputations, so it is disabled rather than allowed to return partial results.
+#'   To vary the method across subgroups, call \code{RefBasedMI()} separately on
+#'   each subgroup with the group-level \code{method} and \code{reference}
+#'   arguments and combine the results.
 #' @export RefBasedMI
-#' @import mice
 #' @param data Dataset in long format
 #' @param covar Baseline covariate(s): must be complete (no missing values)
 #' @param depvar Outcome variable
 #' @param treatvar Treatment group variable: can be numeric or character
-#' @param idvar Participant identifiervariable
+#' @param idvar Participant identifier variable
 #' @param timevar  Variable indicating time point for repeated measures
 #' @param method Reference-based imputation method: must be "J2R", "CR", "CIR", "MAR", "Causal" or "LMCF"
 #' @param reference  Reference group for "J2R", "CIR", "CR" methods, or control group for causal method: can be numeric or string
-#' @param methodvar Variable in dataset specifying individual method
-#' @param referencevar Variable in dataset specifying reference group for individual method
+#' @param methodvar Variable in dataset specifying the individual imputation method.
+#'   Individual-specific methods are not supported in this release (see Details);
+#'   supplying this argument raises an error.
+#' @param referencevar Variable in dataset specifying the reference group for the
+#'   individual method. Not supported in this release (see \code{methodvar}).
 #' @param K0 Causal constant for use with Causal method
 #' @param K1 Exponential decaying causal constant for use with Causal method
 #' @param delta Optional vector of delta values to add onto imputed values (non-mandatory) (a's in Five_Macros user guide), length equal to number of time points
@@ -39,18 +48,19 @@
 #' @param mle Use with extreme caution: do improper imputation by drawing from the model using the maximum likelihood estimates. This does not allow for uncertainty in the MLEs and invalidates interval estimates from Rubin's rules.
 #' @return A data frame containing the original data stacked above the M imputed data sets. The original ID variable (idvar) is renamed as .id. A new variable .imp indicates the original data (.imp=0) or the imputed data sets (.imp=1,...,M).
 #' @examples
-#' # Perform jump to reference imputation on asthma trial data, with reference arm 1 
-#' asthmaJ2R <- RefBasedMI(data=asthma, depvar=fev, treatvar=treat, 
-#'  idvar=id, timevar=time, method="J2R", reference=1, M=5, seed=54321)
-
-#' # Fit regression model to each imputed data set by treating output data frame as mids object
-#' library(mice)
-#' fit <- with(data = as.mids(asthmaJ2R), lm(fev ~ factor(treat), subset=(time==12)))
-
-#' # Find pooled treatment effects using Rubin's rules 
-#' summary(pool(fit))
-
-# v0.2.0
+#' # Jump-to-reference imputation of the asthma trial, with reference arm 1
+#' asthmaJ2R <- RefBasedMI(data = asthma, depvar = fev, treatvar = treat,
+#'   idvar = id, timevar = time, covar = base, method = "J2R", reference = 1,
+#'   M = 2, seed = 54321)
+#'
+#' # Analyse the imputations with Rubin's rules via the mice package
+#' \donttest{
+#' if (requireNamespace("mice", quietly = TRUE)) {
+#'   fit <- with(mice::as.mids(asthmaJ2R),
+#'               lm(fev ~ factor(treat), subset = (time == 12)))
+#'   summary(mice::pool(fit))
+#' }
+#' }
 # @param mle logical option to Use maximum likelihood parameter estimates instead of MCMC draw parameters
 # mimix<- function(data,covar=NULL,depvar,treatvar,idvar,timevar,M=1,reference=NULL,method=NULL,seed=101,prior="jeffreys",burnin=1000,bbetween=NULL,methodvar=NULL,referencevar=NULL,delta=NULL,dlag=NULL,K0=1,K1=1,mle=FALSE) {
 
