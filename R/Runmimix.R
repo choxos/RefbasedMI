@@ -129,7 +129,7 @@ RefBasedMI<- function(data,covar=NULL,depvar,treatvar,idvar,timevar,method=NULL,
   # check reference consistent with treatvar
 
 
-  if (!is.null(method) & (toupper(method) != "MAR") & (toupper(method) != "LMCF")  ) {
+  if (!is.null(method) && (toupper(method) != "MAR") && (toupper(method) != "LMCF")  ) {
      if (is.null(reference)) {stop("\nStopped !! reference value NULL, required for \"J2R\",\"CIR\",\"CR\",\"Causal\" ")}
   }
 
@@ -166,9 +166,23 @@ RefBasedMI<- function(data,covar=NULL,depvar,treatvar,idvar,timevar,method=NULL,
   # to put quotes in method
   if (!is.null(substitute(method))) {method<-paste0("",(substitute(method)),"")}
   if (!is.null(substitute(methodvar))) {methodvar<-paste0("",(substitute(methodvar)),"")}
+  # referencevar, like methodvar, may be supplied as a bare column name
+  if (!is.null(substitute(referencevar))) {referencevar<-paste0("",(substitute(referencevar)),"")}
 
   # this won't work no quoted etc
   if (!xor(is.null(method), is.null(methodvar)) ) {stop("Either method or methodvar must be specified but NOT both") }
+
+  # Individual-specific imputation (methodvar/referencevar) is not validated in
+  # this release: the code path can leave records unimputed and does not yet
+  # reproduce the corresponding group-level imputations. Rather than return
+  # silently incomplete results, refuse the call and point users at the
+  # supported per-subgroup workflow. See NEWS.md and the package documentation.
+  if (!is.null(methodvar)) {
+    stop("Individual-specific methods via 'methodvar'/'referencevar' are not ",
+         "supported in this release.\n",
+         "Impute each subgroup separately using the group-level 'method' ",
+         "(and 'reference') arguments, then combine the results.")
+  }
 
   # establish whether specifying individual or group by creating a flag var
   if (!is.null(method)) {
