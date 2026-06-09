@@ -36,7 +36,7 @@ RefBasedMI(
 
 \item{treatvar}{Treatment group variable: can be numeric or character}
 
-\item{idvar}{Participant identifiervariable}
+\item{idvar}{Participant identifier variable}
 
 \item{timevar}{Variable indicating time point for repeated measures}
 
@@ -44,9 +44,12 @@ RefBasedMI(
 
 \item{reference}{Reference group for "J2R", "CIR", "CR" methods, or control group for causal method: can be numeric or string}
 
-\item{methodvar}{Variable in dataset specifying individual method}
+\item{methodvar}{Variable in dataset specifying the individual imputation method.
+Individual-specific methods are not supported in this release (see Details);
+supplying this argument raises an error.}
 
-\item{referencevar}{Variable in dataset specifying reference group for individual method}
+\item{referencevar}{Variable in dataset specifying the reference group for the
+individual method. Not supported in this release (see \code{methodvar}).}
 
 \item{K0}{Causal constant for use with Causal method}
 
@@ -58,7 +61,8 @@ RefBasedMI(
 
 \item{M}{Number of imputations to be created}
 
-\item{seed}{Seed value: specify this so that a new run of the command will give the same imputed values}
+\item{seed}{Optional integer seed for the random number generator. Supply a value to make
+repeated runs reproducible; if \code{NULL} (the default) the imputations are random each run.}
 
 \item{prior}{Prior when fitting multivariate normal distributions: can be one of "jeffreys" (default), "uniform" or "ridge"}
 
@@ -92,14 +96,27 @@ The baseline value of the outcome could be handed as an outcome, but this would 
 The program is based on Suzie Cro's Stata program mimix
 
 The user can use the as.mids() function in the mice package to convert the output data to mids data type and then perform analysis using Rubin's rules.
+
+Individual-specific imputation methods (arguments \code{methodvar} and
+\code{referencevar}) are not supported in this release: the code path can
+leave records unimputed and does not reproduce the corresponding group-level
+imputations, so it is disabled rather than allowed to return partial results.
+To vary the method across subgroups, call \code{RefBasedMI()} separately on
+each subgroup with the group-level \code{method} and \code{reference}
+arguments and combine the results.
 }
 \examples{
-# Perform jump to reference imputation on asthma trial data, with reference arm 1 
-asthmaJ2R <- RefBasedMI(data=asthma, depvar=fev, treatvar=treat, 
- idvar=id, timevar=time, method="J2R", reference=1, M=5, seed=54321)
-# Fit regression model to each imputed data set by treating output data frame as mids object
-library(mice)
-fit <- with(data = as.mids(asthmaJ2R), lm(fev ~ factor(treat), subset=(time==12)))
-# Find pooled treatment effects using Rubin's rules 
-summary(pool(fit))
+# Jump-to-reference imputation of the asthma trial, with reference arm 1
+asthmaJ2R <- RefBasedMI(data = asthma, depvar = fev, treatvar = treat,
+  idvar = id, timevar = time, covar = base, method = "J2R", reference = 1,
+  M = 2, seed = 54321)
+
+# Analyse the imputations with Rubin's rules via the mice package
+\donttest{
+if (requireNamespace("mice", quietly = TRUE)) {
+  fit <- with(mice::as.mids(asthmaJ2R),
+              lm(fev ~ factor(treat), subset = (time == 12)))
+  summary(mice::pool(fit))
+}
+}
 }

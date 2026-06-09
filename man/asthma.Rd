@@ -3,22 +3,26 @@
 \docType{data}
 \name{asthma}
 \alias{asthma}
-\title{Sample data: asthma trial}
+\title{Asthma trial data}
 \format{
-A data frame containing 732 rows and 5 columns
+A data frame with 732 rows and 5 variables:
 \describe{
 \item{id}{patient identifier}
-\item{time}{}
-\item{treat}{}
-\item{base}{covariate}
-\item{fev}{outcome variable}
+\item{time}{measurement time point, in weeks (2, 4, 8, 12)}
+\item{treat}{randomised treatment arm (1 or 2)}
+\item{base}{baseline value of the outcome, used as a covariate}
+\item{fev}{forced expiratory volume, the outcome (missing after discontinuation)}
 }
+}
+\source{
+Distributed with the Stata \emph{mimix} package by Suzie Cro.
 }
 \usage{
 asthma
 }
 \description{
-A data set containing  asthma trial data as used in the Stata mimix help file
-The primary outcome variable is fev, measured at 2,4,8,12 weeks
+The asthma clinical trial data used in the Stata \emph{mimix} help file. The
+outcome \code{fev} (forced expiratory volume) is recorded in long format at
+weeks 2, 4, 8 and 12, with some post-baseline values missing.
 }
 \keyword{datasets}

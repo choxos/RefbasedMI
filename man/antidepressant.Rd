@@ -3,32 +3,37 @@
 \docType{data}
 \name{antidepressant}
 \alias{antidepressant}
-\title{Sample data: antidepressant trial}
+\title{Antidepressant trial data}
 \format{
-dataframe containing 688 rows and 14 columns
+A data frame with 688 rows and 14 variables:
 \describe{
-\item{PATIENT.NUMBER}{}
-\item{HAMA.TOTAL}{}
-\item{PGI_IMPROVEMENT}{}
-\item{VISIT...VISIT.3.DATE}{}
-\item{VISIT.NUMBER}{}
-\item{TREATMENT.NAME}{}
-\item{PATIENT.SEX}{}
-\item{POOLED.INVESTIGATOR}{}
-\item{basval}{}
-\item{HAMD17.TOTAL}{outcome variable}
-\item{change}{}
-\item{miss_flag}{}
-\item{methodcol}{individual-specific method}
-\item{referencecol}{individual-specific reference arm}
+\item{PATIENT.NUMBER}{patient identifier}
+\item{HAMA.TOTAL}{Hamilton anxiety rating scale total}
+\item{PGI.IMPROVEMENT}{patient global impression of improvement}
+\item{VISIT.DATE}{day of the visit relative to randomisation}
+\item{VISIT.NUMBER}{visit number (4, 5, 6, 7)}
+\item{TREATMENT.NAME}{randomised treatment arm}
+\item{PATIENT.SEX}{patient sex}
+\item{POOLED.INVESTIGATOR}{pooled investigator centre}
+\item{basval}{baseline value of the outcome, used as a covariate}
+\item{HAMD17.TOTAL}{Hamilton 17-item depression rating, the outcome}
+\item{change}{change from baseline in the outcome}
+\item{miss_flag}{indicator that the record is observed}
+\item{methodcol}{per-patient imputation method (for individual-specific imputation)}
+\item{referencecol}{per-patient reference arm (for individual-specific imputation)}
 }
+}
+\source{
+White I R, Royes J, Best N (2020) \doi{10.1080/10543406.2019.1684308}.
 }
 \usage{
 antidepressant
 }
 \description{
-A data set containing antidepressant trial data as described in paper
-by White,Royes,Best (2019)
-The primary outcome is HAMD17.TOTAL measured at visit number 4,5,6,7.
+The antidepressant clinical trial data described by White, Royes and Best
+(2020). The outcome \code{HAMD17.TOTAL} (Hamilton depression rating) is
+recorded in long format at visits 4, 5, 6 and 7. The data also carry
+per-patient method and reference columns used to illustrate individual-specific
+imputation.
 }
 \keyword{datasets}

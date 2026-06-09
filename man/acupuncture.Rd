@@ -3,29 +3,32 @@
 \docType{data}
 \name{acupuncture}
 \alias{acupuncture}
-\title{Sample data: acupuncture trial}
+\title{Acupuncture trial data}
 \format{
-A data frame with 802 rows and 11 columns
+A data frame with 802 rows and 11 variables:
 \describe{
-\item{id}{}
-\item{time}{}
-\item{age}{}
-\item{sex}{}
-\item{migraine}{}
-\item{chronicity}{}
-\item{practice_id}{}
-\item{treat}{}
-\item{head_base}{covariate}
-\item{head}{outcome variable}
-\item{withdrawal_reason}{}
+\item{id}{patient identifier}
+\item{time}{measurement time point (3 or 12)}
+\item{age}{patient age, in years}
+\item{sex}{patient sex}
+\item{migraine}{indicator of migraine (versus tension-type headache)}
+\item{chronicity}{duration of headache disorder, in years}
+\item{practice_id}{recruiting practice identifier}
+\item{treat}{randomised treatment arm (1 or 2)}
+\item{head_base}{baseline headache score, used as a covariate}
+\item{head}{headache severity score, the outcome (missing after discontinuation)}
+\item{withdrawal_reason}{reason for withdrawal, where recorded}
 }
+}
+\source{
+Vickers A J et al. acupuncture for chronic headache trial.
 }
 \usage{
 acupuncture
 }
 \description{
-A data set containing results of a randomised, double-blind, parallel-group
-comparing active treatment with placebo
-The primary outcome is head, measured at time 3 and 12
+Data from a randomised, double-blind, parallel-group trial comparing active
+treatment with placebo. The outcome \code{head} (headache severity score) is
+recorded in long format at times 3 and 12.
 }
 \keyword{datasets}
