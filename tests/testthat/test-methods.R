@@ -55,3 +55,14 @@ test_that("the causal model yields a valid imputation", {
                              K0 = 1, K1 = 0.5)
   check_imputation_invariants(out, asthma, "fev", "id", "time", 2)
 })
+
+test_that("the causal model with K0 = 0 collapses to jump-to-reference", {
+  skip_on_cran()
+  data(asthma, package = "RefBasedMI")
+  # K0 = 0 makes the maintained-effect term vanish, so K1 may be omitted and
+  # the imputation must match J2R exactly under the same seed
+  out0 <- quiet_impute_method(asthma, method = "Causal", reference = 1, K0 = 0)
+  check_imputation_invariants(out0, asthma, "fev", "id", "time", 2)
+  outj <- quiet_impute_method(asthma, method = "J2R", reference = 1)
+  expect_equal(out0, outj)
+})

@@ -14,6 +14,11 @@ group_summarize <- function(x, by, FUN = sum) {
   if (is.null(names(by)) || any(!nzchar(names(by)))) {
     names(by) <- paste0("by", seq_along(by))
   }
+  # aggregate() silently drops rows whose grouping value is NA, which would
+  # desynchronise the cumulative case counts from the data; refuse instead
+  if (anyNA(by, recursive = TRUE)) {
+    stop("grouping variables must not contain missing values")
+  }
   agg <- stats::aggregate(list(value = x), by = by, FUN = FUN)
   agg <- agg[do.call(order, agg[names(by)]), , drop = FALSE]
   rownames(agg) <- NULL

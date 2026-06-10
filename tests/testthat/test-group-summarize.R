@@ -21,3 +21,10 @@ test_that("group_summarize rejects a non-list 'by'", {
   gs <- getFromNamespace("group_summarize", "RefBasedMI")
   expect_error(gs(1:3, by = 1:3, FUN = sum), "list")
 })
+
+test_that("group_summarize rejects grouping variables with missing values", {
+  # aggregate() would silently drop the NA group's rows, desynchronising the
+  # cumulative case counts from the data
+  gs <- getFromNamespace("group_summarize", "RefBasedMI")
+  expect_error(gs(1:4, by = list(c(1, NA, 2, 2)), FUN = sum), "missing values")
+})
