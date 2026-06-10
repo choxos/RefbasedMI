@@ -64,5 +64,12 @@ test_that("the causal model with K0 = 0 collapses to jump-to-reference", {
   out0 <- quiet_impute_method(asthma, method = "Causal", reference = 1, K0 = 0)
   check_imputation_invariants(out0, asthma, "fev", "id", "time", 2)
   outj <- quiet_impute_method(asthma, method = "J2R", reference = 1)
-  expect_equal(out0, outj)
+  # the stored run settings differ by design; the imputed data must not
+  strip_settings <- function(d) {
+    d <- as.data.frame(d)
+    attributes(d) <- attributes(d)[c("names", "row.names", "class")]
+    class(d) <- "data.frame"
+    d
+  }
+  expect_equal(strip_settings(out0), strip_settings(outj))
 })

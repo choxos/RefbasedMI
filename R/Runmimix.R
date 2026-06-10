@@ -120,12 +120,14 @@
 #'   when calling `RefBasedMI()` repeatedly, for example over a sensitivity
 #'   grid.
 #'
-#' @return A data frame in long format stacking the original data (`.imp = 0`)
-#'   above the `M` imputed datasets (`.imp = 1, ..., M`). The `.imp` column
-#'   identifies the imputation and the participant identifier is retained.
-#'   Observed values are unchanged; only post-discontinuation (and interim)
-#'   missing outcomes are filled in. Pass the result to `mice::as.mids()` to
-#'   analyse by Rubin's rules.
+#' @return A data frame of class `"refbasedmi"` in long format stacking the
+#'   original data (`.imp = 0`) above the `M` imputed datasets
+#'   (`.imp = 1, ..., M`). The `.imp` column identifies the imputation and the
+#'   participant identifier is retained. Observed values are unchanged; only
+#'   post-discontinuation (and interim) missing outcomes are filled in. The run
+#'   settings are stored as attributes and shown by
+#'   [print()][print.refbasedmi] and [summary()][print.refbasedmi]. Pass the
+#'   result to [as_mids()] (or `mice::as.mids()`) to analyse by Rubin's rules.
 #'
 #' @references
 #' Carpenter J R, Roger J H, Kenward M G (2013). Analysis of longitudinal trials
@@ -325,7 +327,11 @@ RefBasedMI<- function(data,covar=NULL,depvar,treatvar,idvar,timevar,method=NULL,
   data[,treatvar]<-as.numeric(as.character(tmptreat))
  
   if (!is.null(reference)) {
+    # keep the user-facing label for the result object before recoding
+    reference_label <- as.character(reference)
     reference<-which(initial_levels_treat==reference)
+  } else {
+    reference_label <- NULL
   }
 
   testinterim<-1
@@ -472,6 +478,8 @@ RefBasedMI<- function(data,covar=NULL,depvar,treatvar,idvar,timevar,method=NULL,
                     ifelse( ( method=="CIR" |method=="CLIR" ),4,
                       ifelse( ( method=="LMCF" | method=="LAST" ),5,
                         ifelse( ( method=="CAUSAL" | method=="CASUAL" | method=="CUASAL"),6,9))))))
+    # canonical method name for the result object
+    method_label <- c("MAR", "CR", "J2R", "CIR", "LMCF", "Causal")[method]
 
     # for user specified
   } 
@@ -1134,6 +1142,11 @@ RefBasedMI<- function(data,covar=NULL,depvar,treatvar,idvar,timevar,method=NULL,
                                    mata_all_newlist,paramBiglist,idvar,flag_indiv,M,
                                    delta,dlag,K0,K1,timevar,data, tst2, initial_levels_treat,
                                    verbose = verbose)
+    as_refbasedmi(testpass2impdatset,
+                  method = method_label, reference = reference_label,
+                  M = M, K0 = K0, K1 = K1, delta = delta, dlag = dlag,
+                  depvar = depvar, treatvar = treatvar, idvar = idvar,
+                  timevar = timevar)
   }
 
 }

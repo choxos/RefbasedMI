@@ -95,12 +95,14 @@ when calling \code{RefBasedMI()} repeatedly, for example over a sensitivity
 grid.}
 }
 \value{
-A data frame in long format stacking the original data (\code{.imp = 0})
-above the \code{M} imputed datasets (\verb{.imp = 1, ..., M}). The \code{.imp} column
-identifies the imputation and the participant identifier is retained.
-Observed values are unchanged; only post-discontinuation (and interim)
-missing outcomes are filled in. Pass the result to \code{mice::as.mids()} to
-analyse by Rubin's rules.
+A data frame of class \code{"refbasedmi"} in long format stacking the
+original data (\code{.imp = 0}) above the \code{M} imputed datasets
+(\verb{.imp = 1, ..., M}). The \code{.imp} column identifies the imputation and the
+participant identifier is retained. Observed values are unchanged; only
+post-discontinuation (and interim) missing outcomes are filled in. The run
+settings are stored as attributes and shown by
+\link[=print.refbasedmi]{print()} and \link[=print.refbasedmi]{summary()}. Pass the
+result to \code{\link[=as_mids]{as_mids()}} (or \code{mice::as.mids()}) to analyse by Rubin's rules.
 }
 \description{
 \code{RefBasedMI()} performs reference-based multiple imputation of a continuous
