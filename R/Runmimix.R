@@ -259,6 +259,49 @@ RefBasedMI<- function(data,covar=NULL,depvar,treatvar,idvar,timevar,method=NULL,
     stop("\nStopped - warning !! ", idvar,"\n in input data requires to be in sorted order ")
   }
 
+  # validate scalar control arguments early so bad values fail with a clear
+  # message instead of corrupting the parameter-draw indexing (non-integer M)
+  # or erroring deep inside the MCMC engine
+  if (!is.numeric(M) || length(M) != 1 || is.na(M) || M < 1 || M %% 1 != 0) {
+    stop("M must be a single integer >= 1")
+  }
+  if (!is.numeric(burnin) || length(burnin) != 1 || is.na(burnin) ||
+      burnin < 1 || burnin %% 1 != 0) {
+    stop("burnin must be a single integer >= 1")
+  }
+  if (!is.null(bbetween) &&
+      (!is.numeric(bbetween) || length(bbetween) != 1 || is.na(bbetween) ||
+       bbetween < 1 || bbetween %% 1 != 0)) {
+    stop("bbetween must be NULL or a single integer >= 1")
+  }
+  if (!is.null(delta) && !is.numeric(delta)) {
+    stop("delta must be a numeric vector")
+  }
+  if (!is.null(dlag) && !is.numeric(dlag)) {
+    stop("dlag must be a numeric vector")
+  }
+
+  # validate data column contents early: a non-numeric outcome or time fails
+  # only after model fitting, missing treatment/id/time values corrupt the
+  # group bookkeeping, and duplicate id-time rows are silently dropped by
+  # reshape()
+  datcheck <- as.data.frame(get("data"))
+  if (!is.numeric(datcheck[[depvar]])) {
+    stop(depvar, " (depvar) must be numeric")
+  }
+  if (!is.numeric(datcheck[[timevar]])) {
+    stop(timevar, " (timevar) must be numeric")
+  }
+  for (navar in c(treatvar, idvar, timevar)) {
+    if (anyNA(datcheck[[navar]])) {
+      stop("missing values in ", navar, " are not allowed")
+    }
+  }
+  if (anyDuplicated(datcheck[, c(idvar, timevar)])) {
+    stop("duplicate ", idvar, " by ", timevar, " combinations in data")
+  }
+  rm(datcheck)
+
   # try recoding treat, eg 2,3 into 1,2,...
   # should work whether treatvar numeric or char
 
@@ -280,7 +323,9 @@ RefBasedMI<- function(data,covar=NULL,depvar,treatvar,idvar,timevar,method=NULL,
   }
 
   testinterim<-1
-  if (!inherits(mle, "logical") & mle !=0 & mle !=1 ) { stop("mle must be logical value") }
+  if (length(mle) != 1 || is.na(mle) || (!is.logical(mle) && !mle %in% c(0, 1))) {
+    stop("mle must be a single logical value")
+  }
   
   if  (!any((class(get("data"))) == "data.frame")) {stop("data must be type dataframe")}
 
@@ -308,16 +353,28 @@ RefBasedMI<- function(data,covar=NULL,depvar,treatvar,idvar,timevar,method=NULL,
   # establish whether specifying individual or group by creating a flag var
   if (!is.null(method)) {
     flag_indiv <-0
-    # Causal constant must be number and check it exists if Causal specified
+    # Causal constants must be numeric scalars; K1 may be omitted when K0 = 0
+    # because the K1 term is then multiplied away
 
     if (toupper(method)=="CAUSAL" |
         toupper(method)== "CASUAL" |
         toupper(method)== "CUASAL") {
-      if (missing(K0))  {
+      if (is.null(K0))  {
         stop("K0 Causal constant not specified")
       }
-      if (missing(K1) & (K0 != 0))  {
-        stop("K1 Causal constant not specified")
+      if (!is.numeric(K0) || length(K0) != 1 || is.na(K0)) {
+        stop("K0 Causal constant must be a single numeric value")
+      }
+      if (is.null(K1)) {
+        if (K0 != 0) {
+          stop("K1 Causal constant not specified")
+        }
+        # K0 = 0 removes the K1 term entirely; pin K1 so the downstream
+        # arithmetic stays scalar rather than collapsing to numeric(0)
+        K1 <- 0
+      }
+      if (!is.numeric(K1) || length(K1) != 1 || is.na(K1)) {
+        stop("K1 Causal constant must be a single numeric value")
       }
       if (K0 < 0) {
         warning("K0 Causal constant negative.. ")
@@ -325,10 +382,13 @@ RefBasedMI<- function(data,covar=NULL,depvar,treatvar,idvar,timevar,method=NULL,
       if (K0 > 1) {
         warning("K0 Greater than 1.. ")
       }
-      if (!(K1 >= 0 & K1 <= 1)) {
+      if (!(K1 >= 0 && K1 <= 1)) {
         stop("K1 Causal constant not in range 0..1 ")
       }
-    } 
+    }
+    else if (!is.null(K0) || !is.null(K1)) {
+      warning("K0/K1 are only used by the Causal method and will be ignored")
+    }
     # Causal constant must be number
     K0<- as.numeric(K0)
     K1<- as.numeric(K1)
@@ -372,8 +432,9 @@ RefBasedMI<- function(data,covar=NULL,depvar,treatvar,idvar,timevar,method=NULL,
 
 
   # assign all characters in meth to UPPER case
-  # check first if meth exists. If statement needed otherwise meth change form Null to character(0)
-  if (!is.null(method) | !length(method)==0) {
+  # method is guaranteed non-NULL here (the xor check and the methodvar gate
+  # above reject every NULL-method call)
+  if (!is.null(method)) {
     method <- toupper(method)
     stopifnot(
       (

@@ -535,7 +535,8 @@ mcmcNorm.default <- function(obj, x=NULL, intercept=TRUE,
       if( length(seeds) != 2L ) 
          stop("Two integer seeds were expected.")}
    else{
-      seeds <- ceiling( runif(2)*.Machine$integer.max ) }
+      # runif() can return 0, and the Fortran generator needs positive seeds
+      seeds <- pmax( ceiling( runif(2)*.Machine$integer.max ), 1 ) }
    storage.mode(seeds) <- "integer"
    #
    if( is.null(impute.every) ){
