@@ -40,7 +40,17 @@ for (nm in names(scenarios)) {
     n_fail <- n_fail + 1L; failures <- c(failures, nm); next
   }
 
-  cmp <- all.equal(base$value, now$value, tolerance = tol)
+  # 0.3.1 classes the result and carries run settings as attributes; the gate
+  # compares the data itself, so normalise both sides to a bare data frame
+  strip <- function(v) {
+    if (is.data.frame(v)) {
+      v <- as.data.frame(v)
+      attributes(v) <- attributes(v)[c("names", "row.names", "class")]
+      class(v) <- "data.frame"
+    }
+    v
+  }
+  cmp <- all.equal(strip(base$value), strip(now$value), tolerance = tol)
   if (isTRUE(cmp)) { cat("identical\n"); n_pass <- n_pass + 1L }
   else { cat("DIFF\n"); for (l in cmp) cat("    ", l, "\n")
          n_fail <- n_fail + 1L; failures <- c(failures, nm) }
