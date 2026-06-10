@@ -65,15 +65,20 @@ head(imp[, c(".imp", "id", "treat", "time", "fev")])
 
 The result is in long format: the original data (`.imp = 0`) stacked above the
 `M` imputed datasets (`.imp = 1, ..., M`). Observed values are unchanged; only
-the post-deviation missing values are filled in.
+the post-deviation missing values are filled in. `summary()` reports the run
+settings and confirms that every imputed dataset is complete:
+
+```{r summary}
+summary(imp)
+```
 
 ### Analysis with Rubin's rules
 
-The output is designed to be turned into a `mids` object with the **mice**
-package and pooled:
+The output is designed to be turned into a `mids` object and pooled. The
+exported `as_mids()` helper wraps `mice::as.mids()`:
 
 ```{r analysis, eval = requireNamespace("mice", quietly = TRUE)}
-fit <- with(mice::as.mids(imp), lm(fev ~ factor(treat), subset = (time == 12)))
+fit <- with(as_mids(imp), lm(fev ~ factor(treat), subset = (time == 12)))
 summary(mice::pool(fit))
 ```
 
@@ -147,15 +152,52 @@ only post-discontinuation (monotone) missingness uses the reference-based
 assumption. This matches the *mimix* behaviour and requires no special handling
 from the user.
 
-## Practical guidance
+## Choosing M, burnin, and the seed
 
-- **Seed.** `seed` defaults to `NULL`, so imputations are random each run. Pass an
-  integer for reproducibility.
+The examples in this vignette use `M = 5` (and `M = 2` in the help pages) so they
+run quickly, but real analyses need more.
+
+- **Number of imputations (`M`).** The Monte Carlo error of a pooled estimate
+  falls as `M` grows. A common rule of thumb is to take `M` at least as large as
+  the percentage fraction of missing information, which in trials with
+  substantial post-deviation missingness often means 50 or more. Too small an `M`
+  leaves the standard errors themselves noisy.
+- **Burn-in (`burnin`) and spacing (`bbetween`).** Each arm's multivariate normal
+  parameters are drawn by the *norm2* MCMC sampler. `burnin` is the number of
+  iterations discarded before the first draw; `bbetween` (defaulting to `burnin`)
+  is the number of iterations between successive imputations, so that the `M`
+  parameter draws are approximately independent. The defaults are generous for
+  the small number of repeated measures typical of these trials; increase them if
+  a trial has many time points or the sampler reports a near-boundary solution.
+- **Reproducibility (`seed`).** `seed` defaults to `NULL`, so imputations are
+  random each run. Pass an integer for a reproducible result.
+
+A simple check that `M` is large enough is to repeat the whole imputation under a
+few different seeds and confirm that the pooled estimate barely moves:
+
+```{r seed-check, eval = requireNamespace("mice", quietly = TRUE)}
+wk12_estimate <- function(seed) {
+  imp <- impute(
+    data = asthma, depvar = fev, treatvar = treat, idvar = id, timevar = time,
+    covar = base, method = "J2R", reference = 1, M = 20, seed = seed,
+    verbose = FALSE
+  )
+  fit <- with(as_mids(imp), lm(fev ~ factor(treat), subset = (time == 12)))
+  unname(mice::pool(fit)$pooled[["estimate"]][2])
+}
+round(vapply(c(101, 202, 303), wk12_estimate, numeric(1)), 3)
+```
+
+If those estimates differ materially, increase `M`.
+
+## Other practical points
+
 - **Baseline.** Supply the baseline outcome as a covariate (`covar`) rather than
-  as an outcome value, so that no treatment effect is assumed at baseline.
-- **MCMC settings.** `burnin` controls the number of burn-in iterations when
-  fitting the multivariate normal model; the default is generally adequate.
-  Increase `M` for more stable pooled inference.
+  as an outcome value, so that no treatment effect is assumed at baseline. Factor
+  covariates are accepted and expanded internally.
+- **Silencing progress.** Pass `verbose = FALSE` to suppress the per-pattern
+  progress messages, which is convenient inside loops such as the seed check
+  above.
 - **Individual-specific methods.** Assigning a different method per patient via
   `methodvar`/`referencevar` is not supported in this release. To vary the method
   across subgroups, impute each subgroup separately and combine the results.
