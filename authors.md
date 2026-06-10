@@ -12,7 +12,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/choxos/RefbasedMI/blob/master/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/choxos/RefbasedMI/blob/v0.3.2/DESCRIPTION)
 
 McGrath K, Sofi-Mahmudi A (2026). *RefBasedMI: Reference-Based
 Imputation for Longitudinal Clinical Trials with Protocol Deviation*. R
