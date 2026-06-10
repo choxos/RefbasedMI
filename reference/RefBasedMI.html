@@ -86,7 +86,8 @@ It is an R port of the Stata program <em>mimix</em> by Suzie Cro.</p>
 <span>  prior <span class="op">=</span> <span class="st">"jeffreys"</span>,</span>
 <span>  burnin <span class="op">=</span> <span class="fl">1000</span>,</span>
 <span>  bbetween <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  mle <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  mle <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -191,6 +192,14 @@ if <code>NULL</code> (the default) the imputations are random each run.</p></dd>
 <dd><p>Logical; if <code>TRUE</code>, impute improperly by drawing from the maximum
 likelihood estimates instead of a posterior draw. Use with extreme caution:
 it ignores parameter uncertainty and invalidates Rubin's-rules intervals.</p></dd>
+
+
+<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
+<dd><p>Logical; if <code>TRUE</code> (the default) the function reports its
+progress, including the missing-data pattern summary and per-pattern
+imputation messages. Set to <code>FALSE</code> to run silently, which is convenient
+when calling <code>RefBasedMI()</code> repeatedly, for example over a sensitivity
+grid.</p></dd>
 
 </dl></div>
     <div class="section level2">

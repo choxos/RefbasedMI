@@ -22,6 +22,8 @@ Useful links:
 
 - <https://github.com/choxos/RefbasedMI>
 
+- <https://choxos.github.io/RefbasedMI/>
+
 - Report bugs at <https://github.com/choxos/RefbasedMI/issues>
 
 ## Author

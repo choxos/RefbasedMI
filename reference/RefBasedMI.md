@@ -33,7 +33,8 @@ RefBasedMI(
   prior = "jeffreys",
   burnin = 1000,
   bbetween = NULL,
-  mle = FALSE
+  mle = FALSE,
+  verbose = TRUE
 )
 ```
 
@@ -138,6 +139,14 @@ RefBasedMI(
   likelihood estimates instead of a posterior draw. Use with extreme
   caution: it ignores parameter uncertainty and invalidates
   Rubin's-rules intervals.
+
+- verbose:
+
+  Logical; if `TRUE` (the default) the function reports its progress,
+  including the missing-data pattern summary and per-pattern imputation
+  messages. Set to `FALSE` to run silently, which is convenient when
+  calling `RefBasedMI()` repeatedly, for example over a sensitivity
+  grid.
 
 ## Value
 
