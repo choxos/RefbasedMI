@@ -218,7 +218,12 @@ RefBasedMI<- function(data,covar=NULL,depvar,treatvar,idvar,timevar,method=NULL,
   # check that reference is category of treatment var
   # and is not null (because method not needed if indiv specific cols requested)
   if (!is.null(reference) ) {
-      if (!any(as.character(as.matrix(get("data")[,(substitute(treatvar))]))==reference)) { stop("reference must be a category of treatment") }
+      treatvalues <- unique(as.character(as.matrix(get("data")[,(substitute(treatvar))])))
+      if (!any(treatvalues==reference)) {
+        stop("reference '", as.character(reference), "' is not a value of ",
+             treatvar, "; available values: ",
+             paste(sort(treatvalues), collapse = ", "))
+      }
   }
 
   # must be null when using methodvar
@@ -229,11 +234,10 @@ RefBasedMI<- function(data,covar=NULL,depvar,treatvar,idvar,timevar,method=NULL,
 
   # check if covar null
   if (length(scovar) > 0 ) {
-    # term on rhs copied & pasted!  "‘c’"
-    # this  unicode ("\U2018","c","\U2019") for Left & right single quotation mark
-    # package wont accept non-ascii char so replace
-    # if (sQuote(scovar)[[1]]== "‘c’")
-    if (sQuote(scovar)[[1]]== paste0("\U2018","c","\U2019") ) {
+    # covar may be a single bare name or a c(...) of bare names; detect the
+    # c() call structurally (the previous sQuote() comparison broke whenever
+    # options(useFancyQuotes) was off, e.g. inside testthat)
+    if (is.call(scovar) && identical(scovar[[1]], as.name("c"))) {
        covarname <- vector(mode = "list", length = (length(scovar) - 1))
        for (i in 2:length(scovar)) {
          # check if covar exists 
@@ -270,7 +274,8 @@ RefBasedMI<- function(data,covar=NULL,depvar,treatvar,idvar,timevar,method=NULL,
 
   # check treatvar in sorted order
   if (is.unsorted(do.call("order",data.frame(get("data")[,idvar]))) ) {
-    stop("\nStopped - warning !! ", idvar,"\n in input data requires to be in sorted order ")
+    stop("the input data must be sorted by ", idvar, "; ",
+         "sort it first, e.g. data[order(data[[\"", idvar, "\"]]), ]")
   }
 
   # validate scalar control arguments early so bad values fail with a clear
@@ -313,6 +318,16 @@ RefBasedMI<- function(data,covar=NULL,depvar,treatvar,idvar,timevar,method=NULL,
   }
   if (anyDuplicated(datcheck[, c(idvar, timevar)])) {
     stop("duplicate ", idvar, " by ", timevar, " combinations in data")
+  }
+
+  # character ids are recoded to integers internally: the interim machinery
+  # round-trips data through as.matrix(), which would otherwise coerce every
+  # column to character (and truncate doubles through format()). The original
+  # ids are restored on the returned dataset.
+  id_levels <- NULL
+  if (is.character(datcheck[[idvar]])) {
+    id_levels <- sort(unique(datcheck[[idvar]]))
+    data[[idvar]] <- match(datcheck[[idvar]], id_levels)
   }
   rm(datcheck)
 
@@ -381,14 +396,16 @@ RefBasedMI<- function(data,covar=NULL,depvar,treatvar,idvar,timevar,method=NULL,
         toupper(method)== "CASUAL" |
         toupper(method)== "CUASAL") {
       if (is.null(K0))  {
-        stop("K0 Causal constant not specified")
+        stop("K0 Causal constant not specified: method = \"Causal\" needs K0 ",
+             "(and K1 unless K0 = 0); see ?RefBasedMI")
       }
       if (!is.numeric(K0) || length(K0) != 1 || is.na(K0)) {
         stop("K0 Causal constant must be a single numeric value")
       }
       if (is.null(K1)) {
         if (K0 != 0) {
-          stop("K1 Causal constant not specified")
+          stop("K1 Causal constant not specified: supply the decay constant ",
+               "in [0, 1], or set K0 = 0 if no effect is maintained")
         }
         # K0 = 0 removes the K1 term entirely; pin K1 so the downstream
         # arithmetic stays scalar rather than collapsing to numeric(0)
@@ -424,8 +441,41 @@ RefBasedMI<- function(data,covar=NULL,depvar,treatvar,idvar,timevar,method=NULL,
   # if covars exist
   # check that covars are complete AND integer/factor
   if (length(covar)!=0) {
-    if (sum(!stats::complete.cases(get("data")[,covar]))!=0) {stop("covariates not complete!!")}
-    stopifnot( (sapply((get("data")[,covar]), is.factor)) | (sapply((get("data")[,covar]), is.numeric)) )
+    covdat <- as.data.frame(get("data"))[, covar, drop = FALSE]
+    incomplete <- covar[colSums(is.na(covdat)) > 0]
+    if (length(incomplete) > 0) {
+      stop("covariates must be complete (baseline covariates cannot have ",
+           "missing values); incomplete: ", paste(incomplete, collapse = ", "),
+           ". Impute or drop these covariates before calling RefBasedMI().")
+    }
+    badtype <- covar[!vapply(covdat, function(x) is.numeric(x) || is.factor(x),
+                             logical(1))]
+    if (length(badtype) > 0) {
+      stop("covariates must be numeric or factor; not: ",
+           paste(badtype, collapse = ", "))
+    }
+  }
+
+  # expand factor covariates into numeric dummy columns: both the model fit
+  # and the conditional-draw arithmetic operate on numeric covariate columns.
+  # The helper columns are removed from the returned dataset.
+  covar_dummies <- NULL
+  if (length(covar) != 0) {
+    isfac <- vapply(as.data.frame(get("data"))[, covar, drop = FALSE],
+                    is.factor, logical(1))
+    for (fc in covar[isfac]) {
+      lv <- levels(data[[fc]])[-1]
+      dnames <- make.names(paste0(fc, "_", lv), unique = TRUE)
+      mm <- stats::model.matrix(~ x, data.frame(x = data[[fc]]))[, -1, drop = FALSE]
+      for (j in seq_along(dnames)) {
+        data[[dnames[j]]] <- as.numeric(mm[, j])
+      }
+      covar_dummies <- c(covar_dummies, dnames)
+    }
+    if (any(isfac)) {
+      covar <- c(covar[!isfac], covar_dummies)
+      ncovar_i <- length(covar)
+    }
   }
 
   # note if no covar then treat the first depvar level as a covar , eg covar = fev.0.
@@ -435,14 +485,18 @@ RefBasedMI<- function(data,covar=NULL,depvar,treatvar,idvar,timevar,method=NULL,
   ntime<-nrow(unique(ntimecol))
   # only run if delta specified
   if (!is.null(delta)) {
-    stopifnot(length(delta) == ntime)
+    if (length(delta) != ntime) {
+      stop("delta must have one value per time point: the data has ", ntime,
+           " time points but delta has length ", length(delta))
+    }
 
     #set dlag to default if 1 1 1 ...if NULL
     if (is.null(dlag)) {
       dlag <- rep(1, length(delta))
-    } 
-    else  {
-      stopifnot(length(dlag) == ntime)
+    }
+    else if (length(dlag) != ntime) {
+      stop("dlag must have one value per time point: the data has ", ntime,
+           " time points but dlag has length ", length(dlag))
     }
   }
 
@@ -457,20 +511,12 @@ RefBasedMI<- function(data,covar=NULL,depvar,treatvar,idvar,timevar,method=NULL,
   # above reject every NULL-method call)
   if (!is.null(method)) {
     method <- toupper(method)
-    stopifnot(
-      (
-        method == "MAR" |
-          method == "J2R" | method == "J2" | method == "JR" |
-          method == "CIR" | method == "CLIR" |
-          method == "CR" |
-          method == "LMCF" | method == "LAST"  |
-          method == "CAUSAL" | method == "CASUAL"
-      ),
-      is.numeric(M),
-      is.character(depvar),
-      is.character(idvar),
-      is.character(timevar)
-    )
+    known_methods <- c("MAR", "J2R", "J2", "JR", "CIR", "CLIR", "CR",
+                       "LMCF", "LAST", "CAUSAL", "CASUAL")
+    if (length(method) != 1 || !(method %in% known_methods)) {
+      stop("method '", paste(method, collapse = ", "), "' is not recognised; ",
+           "use one of \"MAR\", \"J2R\", \"CR\", \"CIR\", \"LMCF\", \"Causal\"")
+    }
   }
 
 
@@ -873,7 +919,10 @@ RefBasedMI<- function(data,covar=NULL,depvar,treatvar,idvar,timevar,method=NULL,
           # change  because error list obj cannot be coerced to double
           # replaced this with S22 because S11 S12 have 0 values when so try
           U <- try(chol(S22), silent=T)
-          if (inherits(U,"try-error")) stop("Error: the covariance matrix for drawing the imputations is not positive definite.")
+          if (inherits(U,"try-error")) stop("the covariance matrix for drawing the imputations is not positive ",
+             "definite. This usually means the model is too rich for the data ",
+             "(many time points or covariates relative to the sample); try ",
+             "prior = \"ridge\", fewer covariates, or a longer burnin.")
           
           # generate inverse normal, same as used below
           miss_count<-sum(mata_miss)
@@ -918,7 +967,10 @@ RefBasedMI<- function(data,covar=NULL,depvar,treatvar,idvar,timevar,method=NULL,
           }
   
           U <- try(chol(conds), silent=T)
-          if (inherits(U,"try-error")) stop("Error: the covariance matrix for drawing the imputations is not positive definite.")
+          if (inherits(U,"try-error")) stop("the covariance matrix for drawing the imputations is not positive ",
+             "definite. This usually means the model is too rich for the data ",
+             "(many time points or covariates relative to the sample); try ",
+             "prior = \"ridge\", fewer covariates, or a longer burnin.")
           miss_count=rowSums(mata_miss)
   
           # generate inverse normal
@@ -1147,7 +1199,8 @@ RefBasedMI<- function(data,covar=NULL,depvar,treatvar,idvar,timevar,method=NULL,
                                    tmptreat,classtreatvar,reference,trtgp,mata_Obs,
                                    mata_all_newlist,paramBiglist,idvar,flag_indiv,M,
                                    delta,dlag,K0,K1,timevar,data, tst2, initial_levels_treat,
-                                   verbose = verbose)
+                                   verbose = verbose, covar_drop = covar_dummies,
+                                   id_levels = id_levels)
     as_refbasedmi(testpass2impdatset,
                   method = method_label, reference = reference_label,
                   M = M, K0 = K0, K1 = K1, delta = delta, dlag = dlag,
@@ -1233,7 +1286,7 @@ getimpdatasets <- function(varlist){
 
 pass2Loop <- function(Imp_Interims,method,mg,ntreat,depvar,covar,treatvar,tmptreat,classtreatvar,reference,trtgp,mata_Obs,
                      mata_all_newlist, paramBiglist,idvar,flag_indiv,M,delta,dlag,K0,K1,timevar,data, tst2, initial_levels_treat,
-                     verbose = TRUE)
+                     verbose = TRUE, covar_drop = NULL, id_levels = NULL)
 {
   # this doesn't call proprocess as data already in wide format
   # for reporting purposes try here rather than runmimix
@@ -1282,17 +1335,24 @@ pass2Loop <- function(Imp_Interims,method,mg,ntreat,depvar,covar,treatvar,tmptre
     # instead of  trtgp<- mg[i,treatvar]
     trtgp<- mg[i,"orig_treat"]
 
-    # but note in case need to change to the character values
-    mg[,treatvar] <- ordered(mg[,treatvar], labels=as.character(unique(tmptreat)))
-    levels(mg[,treatvar]) <- initial_levels_treat
+    # restore the original numeric treatment values (e.g. arms coded 0/1 were
+    # recoded to 1/2 on entry). Only possible when the original labels parse
+    # as numbers: character arms (e.g. "Placebo") keep their 1..k codes, and
+    # the original labels are reapplied to the final dataset instead.
+    if (!anyNA(suppressWarnings(as.numeric(initial_levels_treat)))) {
+      mg[,treatvar] <- ordered(mg[,treatvar], labels=as.character(unique(tmptreat)))
+      levels(mg[,treatvar]) <- initial_levels_treat
+
+      if  (!is.null(method) ) {
+        #try this converting factor to numeric to ensure correct ordering
+        mg[,treatvar]<-sort(as.numeric(as.character(mg[,treatvar])))
+      }
+    }
 
     pattern <- mg$patt[i]
 
     if  (!is.null(method) ) {
-
-      #try this converting factor to numeric to ensure correct ordering
-      mg[,treatvar]<-sort(as.numeric(as.character(mg[,treatvar])))
-      if (verbose) message(paste(treatvar," = ", mg[i,treatvar],"pattern = ",pattern,"number patients = ",cnt,"\n"))
+      if (verbose) message(paste(treatvar," = ", initial_levels_treat[mg[i,"orig_treat"]],"pattern = ",pattern,"number patients = ",cnt,"\n"))
     }
     else if(!is.null(methodvar) ) {
       if (verbose) message(treatvar," = ",trtgp,methodvar," = ",as.character(mg[i,methodvar]),
@@ -1330,7 +1390,7 @@ pass2Loop <- function(Imp_Interims,method,mg,ntreat,depvar,covar,treatvar,tmptre
         Imp_Interims_0<- subset(as.matrix(Imp_Interims[Imp_Interims$.imp==0,]))
   
         ImpInters <-    get(paste0("Imp_Interims_",m))
-  
+
         colnames(ImpInters)[colnames(ImpInters)==treatvar]<-"treat"
         test_Imp <- subset(ImpInters,select=-c(.imp,patt,treat))
         #  interim for aNTIDEP data")
@@ -1565,7 +1625,10 @@ pass2Loop <- function(Imp_Interims,method,mg,ntreat,depvar,covar,treatvar,tmptre
           ## routine copied from mimix line 1229
 
           U <- try(chol(S22), silent=T)
-          if (inherits(U,"try-error")) stop("Error: the covariance matrix for drawing the imputations is not positive definite.")
+          if (inherits(U,"try-error")) stop("the covariance matrix for drawing the imputations is not positive ",
+             "definite. This usually means the model is too rich for the data ",
+             "(many time points or covariates relative to the sample); try ",
+             "prior = \"ridge\", fewer covariates, or a longer burnin.")
           
           # generate inverse normal, same as used below
           miss_count<-sum(mata_miss)
@@ -1606,7 +1669,10 @@ pass2Loop <- function(Imp_Interims,method,mg,ntreat,depvar,covar,treatvar,tmptre
           }
 
           U <- try(chol(conds), silent=T)
-          if (inherits(U,"try-error")) stop("Error: the covariance matrix for drawing the imputations is not positive definite.")
+          if (inherits(U,"try-error")) stop("the covariance matrix for drawing the imputations is not positive ",
+             "definite. This usually means the model is too rich for the data ",
+             "(many time points or covariates relative to the sample); try ",
+             "prior = \"ridge\", fewer covariates, or a longer burnin.")
           miss_count=rowSums(mata_miss)
 
           # generate inverse normal
@@ -1668,7 +1734,7 @@ pass2Loop <- function(Imp_Interims,method,mg,ntreat,depvar,covar,treatvar,tmptre
     test_Imp <- subset(ImpInters,select=-c(patt,treat))
   
     test_Imp<-as.data.frame(test_Imp)
-  
+
     # anchor to depvar.<time> columns so a covariate whose name shares the
     # depvar prefix (e.g. depvar "head" vs covariate "head_base") is not matched
     depcolsf<- grep(paste0("^",depvar,"\\."),names(impdataset))
@@ -1719,21 +1785,43 @@ pass2Loop <- function(Imp_Interims,method,mg,ntreat,depvar,covar,treatvar,tmptre
   impdatamergeord<-(impdatamerge[order(impdatamerge[,".imp"],impdatamerge[,idvar],impdatamerge[,timevar]),])
 
   # Make sure levels are same as original data
-  impdatamergeord[,treatvar]<-factor(impdatamergeord[,treatvar])
-  levels(impdatamergeord[,treatvar])<-initial_levels_treat
-  
-  # copy  class of treatvar same as in input data
+  if (anyNA(suppressWarnings(as.numeric(initial_levels_treat)))) {
+    # character arm labels: the level-index trick below relies on the labels
+    # parsing as numbers, so map the 1..k codes back to the labels directly
+    tcol <- factor(impdatamergeord[,treatvar])
+    levels(tcol) <- initial_levels_treat
+    tcol <- as.character(tcol)
+    if (classtreatvar[1] == "factor") {
+      tcol <- factor(tcol, levels = initial_levels_treat)
+    }
+    impdatamergeord[,treatvar] <- tcol
+  } else {
+    impdatamergeord[,treatvar]<-factor(impdatamergeord[,treatvar])
+    levels(impdatamergeord[,treatvar])<-initial_levels_treat
 
-  class(impdatamergeord[,treatvar])<-classtreatvar
+    # copy  class of treatvar same as in input data
 
-  impdatamergeord[,treatvar] <- levels(impdatamergeord[,treatvar])[(impdatamergeord[,treatvar])]
-  # need to repeat this in case has changed to character
-  class(impdatamergeord[,treatvar])<-classtreatvar
+    class(impdatamergeord[,treatvar])<-classtreatvar
+
+    impdatamergeord[,treatvar] <- levels(impdatamergeord[,treatvar])[(impdatamergeord[,treatvar])]
+    # need to repeat this in case has changed to character
+    class(impdatamergeord[,treatvar])<-classtreatvar
+  }
 
 
 
   # drop patt
   impdatamergeord$patt<-NULL
+
+  # drop the internal dummy columns created for factor covariates
+  for (cd in covar_drop) {
+    impdatamergeord[[cd]] <- NULL
+  }
+
+  # restore the original character ids (recoded to integers on entry)
+  if (!is.null(id_levels)) {
+    impdatamergeord[[idvar]] <- id_levels[impdatamergeord[[idvar]]]
+  }
 
   return(impdatamergeord)   # pass2loop end
 }
