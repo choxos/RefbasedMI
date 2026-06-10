@@ -189,9 +189,13 @@ preprodata <-
     ex1s[, treatvar] <-
       ordered(ex1s[, treatvar], labels = initial_levels_treat)
 
-    # tmptreat is factor which could  lead to wrong order so convert to numeric
-    ex1s[, treatvar] <-
-      sort(as.numeric(as.character(ex1s[, treatvar])))
+    # tmptreat is factor which could  lead to wrong order so convert to numeric;
+    # character arm labels (e.g. "Placebo") cannot be parsed, so display them
+    # as they are instead of coercing the whole column to NA
+    if (!anyNA(suppressWarnings(as.numeric(initial_levels_treat)))) {
+      ex1s[, treatvar] <-
+        sort(as.numeric(as.character(ex1s[, treatvar])))
+    }
     # above replaces below
 
     if (verbose) print_in_message(ex1s)
