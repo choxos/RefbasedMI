@@ -43,9 +43,7 @@ test_that("every reference-based method yields a valid imputation", {
     list(method = "LMCF", reference = NULL)
   )
   for (cf in cfg) {
-    out <- quiet_impute(data = asthma, depvar = fev, treatvar = treat, idvar = id,
-                        timevar = time, covar = base, method = cf$method,
-                        reference = cf$reference, M = 2, seed = 1, burnin = 30)
+    out <- quiet_impute_method(asthma, method = cf$method, reference = cf$reference)
     check_imputation_invariants(out, asthma, "fev", "id", "time", 2)
   }
 })
@@ -53,8 +51,7 @@ test_that("every reference-based method yields a valid imputation", {
 test_that("the causal model yields a valid imputation", {
   skip_on_cran()
   data(asthma, package = "RefBasedMI")
-  out <- quiet_impute(data = asthma, depvar = fev, treatvar = treat, idvar = id,
-                      timevar = time, covar = base, method = "Causal", reference = 1,
-                      K0 = 1, K1 = 0.5, M = 2, seed = 1, burnin = 30)
+  out <- quiet_impute_method(asthma, method = "Causal", reference = 1,
+                             K0 = 1, K1 = 0.5)
   check_imputation_invariants(out, asthma, "fev", "id", "time", 2)
 })
