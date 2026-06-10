@@ -17,7 +17,7 @@ preprodata <-
            timevar,
            M,
            reference,
-           method = NULL, initial_levels_treat) {
+           method = NULL, initial_levels_treat, verbose = TRUE) {
 
     # change order put covar last
 
@@ -179,7 +179,7 @@ preprodata <-
     # prefer to call pattern
     names(ex1s)[names(ex1s) == "patt"] <- "pattern"
 
-    message(paste0("   ", "\n\nSummary of missing data pattern by ", treatvar, ":\n\n"))
+    if (verbose) message(paste0("   ", "\n\nSummary of missing data pattern by ", treatvar, ":\n\n"))
 
 
     # setting row names NULL automatically produces sequential index
@@ -194,7 +194,7 @@ preprodata <-
       sort(as.numeric(as.character(ex1s[, treatvar])))
     # above replaces below
 
-    print_in_message(ex1s)
+    if (verbose) print_in_message(ex1s)
 
 
     # so finaldatS is sorted by treat,patt  data

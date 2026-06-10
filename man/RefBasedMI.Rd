@@ -24,7 +24,8 @@ RefBasedMI(
   prior = "jeffreys",
   burnin = 1000,
   bbetween = NULL,
-  mle = FALSE
+  mle = FALSE,
+  verbose = TRUE
 )
 }
 \arguments{
@@ -86,6 +87,12 @@ if \code{NULL} (the default) the imputations are random each run.}
 \item{mle}{Logical; if \code{TRUE}, impute improperly by drawing from the maximum
 likelihood estimates instead of a posterior draw. Use with extreme caution:
 it ignores parameter uncertainty and invalidates Rubin's-rules intervals.}
+
+\item{verbose}{Logical; if \code{TRUE} (the default) the function reports its
+progress, including the missing-data pattern summary and per-pattern
+imputation messages. Set to \code{FALSE} to run silently, which is convenient
+when calling \code{RefBasedMI()} repeatedly, for example over a sensitivity
+grid.}
 }
 \value{
 A data frame in long format stacking the original data (\code{.imp = 0})
