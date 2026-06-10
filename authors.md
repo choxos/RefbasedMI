@@ -16,12 +16,12 @@ Source:
 
 McGrath K, Sofi-Mahmudi A (2026). *RefBasedMI: Reference-Based
 Imputation for Longitudinal Clinical Trials with Protocol Deviation*. R
-package version 0.2.0, <https://github.com/choxos/RefbasedMI>.
+package version 0.3.0, <https://github.com/choxos/RefbasedMI>.
 
     @Manual{,
       title = {RefBasedMI: Reference-Based Imputation for Longitudinal Clinical Trials with Protocol Deviation},
       author = {Kevin McGrath and Ahmad Sofi-Mahmudi},
       year = {2026},
-      note = {R package version 0.2.0},
+      note = {R package version 0.3.0},
       url = {https://github.com/choxos/RefbasedMI},
     }
