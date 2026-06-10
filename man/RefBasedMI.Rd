@@ -34,7 +34,8 @@ participant-time), sorted by participant.}
 
 \item{covar}{Baseline covariate(s) given as a name or character vector; must be
 complete (no missing values) and numeric or factor. Typically the baseline
-outcome.}
+outcome. Factor covariates are expanded to dummy columns through
+\code{\link[stats:model.matrix]{stats::model.matrix()}} before the model is fitted.}
 
 \item{depvar}{Continuous outcome variable to be imputed.}
 
@@ -60,10 +61,12 @@ an error.}
 supported in this release (see \code{methodvar}).}
 
 \item{K0}{Causal model constant (the maintained fraction of the treatment
-effect); used with \code{method = "Causal"}.}
+effect); used with \code{method = "Causal"}. \code{K0 = 0} reproduces jump-to-reference
+and \code{K0 = 1} reproduces copy-increments-in-reference.}
 
 \item{K1}{Causal model decay constant in [0, 1]; the maintained effect decays
-by \code{K1} each period. Used with \code{method = "Causal"}.}
+by \code{K1} each period. Used with \code{method = "Causal"}. May be omitted when
+\code{K0 = 0}, since the decay term is then switched off.}
 
 \item{delta}{Optional numeric vector of delta increments (the \emph{a} values of
 Roger's "five macros"), of length equal to the number of time points.}
@@ -71,7 +74,10 @@ Roger's "five macros"), of length equal to the number of time points.}
 \item{dlag}{Optional numeric vector of delta lag weights (the \emph{b} values), of
 length equal to the number of time points; defaults to all ones.}
 
-\item{M}{Number of imputations to create.}
+\item{M}{Number of imputations to create. Small values (the examples use
+\code{M = 2} only to run quickly) give unstable standard errors; use a larger
+\code{M}, of the order of the percentage fraction of missing information, for
+reported analyses.}
 
 \item{seed}{Optional integer seed. Supply a value for reproducible imputations;
 if \code{NULL} (the default) the imputations are random each run.}

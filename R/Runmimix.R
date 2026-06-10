@@ -79,7 +79,8 @@
 #'   participant-time), sorted by participant.
 #' @param covar Baseline covariate(s) given as a name or character vector; must be
 #'   complete (no missing values) and numeric or factor. Typically the baseline
-#'   outcome.
+#'   outcome. Factor covariates are expanded to dummy columns through
+#'   [stats::model.matrix()] before the model is fitted.
 #' @param depvar Continuous outcome variable to be imputed.
 #' @param treatvar Treatment arm variable; numeric or character.
 #' @param idvar Participant identifier variable.
@@ -96,14 +97,19 @@
 #' @param referencevar Variable specifying a per-participant reference arm. Not
 #'   supported in this release (see `methodvar`).
 #' @param K0 Causal model constant (the maintained fraction of the treatment
-#'   effect); used with `method = "Causal"`.
+#'   effect); used with `method = "Causal"`. `K0 = 0` reproduces jump-to-reference
+#'   and `K0 = 1` reproduces copy-increments-in-reference.
 #' @param K1 Causal model decay constant in \[0, 1\]; the maintained effect decays
-#'   by `K1` each period. Used with `method = "Causal"`.
+#'   by `K1` each period. Used with `method = "Causal"`. May be omitted when
+#'   `K0 = 0`, since the decay term is then switched off.
 #' @param delta Optional numeric vector of delta increments (the *a* values of
 #'   Roger's "five macros"), of length equal to the number of time points.
 #' @param dlag Optional numeric vector of delta lag weights (the *b* values), of
 #'   length equal to the number of time points; defaults to all ones.
-#' @param M Number of imputations to create.
+#' @param M Number of imputations to create. Small values (the examples use
+#'   `M = 2` only to run quickly) give unstable standard errors; use a larger
+#'   `M`, of the order of the percentage fraction of missing information, for
+#'   reported analyses.
 #' @param seed Optional integer seed. Supply a value for reproducible imputations;
 #'   if `NULL` (the default) the imputations are random each run.
 #' @param prior Prior for the multivariate normal fit: `"jeffreys"` (default),
