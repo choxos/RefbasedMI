@@ -1,3 +1,48 @@
+# RefBasedMI 0.3.2
+
+This release makes character treatment-arm labels, character participant ids,
+and factor covariates work end to end, and adds guidance to the error messages.
+The imputation results for previously supported inputs are unchanged (all 14
+regression baseline scenarios remain byte-identical).
+
+## Bug fixes
+
+* Character treatment-arm labels (for example `"Placebo"` and drug names)
+  previously crashed with `invalid 'labels'; length k should be 1 or 0` after
+  `NAs introduced by coercion` warnings, and the missing-data pattern summary
+  displayed the treatment column as `NA`. The internal numeric round-trip now
+  runs only for arms whose labels parse as numbers; character labels keep their
+  internal codes and are restored on output, and the pattern summary shows the
+  real arm names.
+* Character participant ids crashed in the interim-imputation machinery (data
+  was round-tripped through `as.matrix()`, coercing every column to character).
+  Ids are now recoded to integers internally and restored on output; with ids
+  of equal sort order the imputed values are identical to a numeric-id run.
+* Factor covariates, documented as supported, crashed in the conditional-draw
+  arithmetic. They are now expanded into numeric dummy columns on entry
+  (matching the `model.matrix()` design) and the helper columns are removed
+  from the returned dataset; a factor covariate reproduces its manual dummy
+  encoding exactly.
+* `covar = c(...)` detection no longer depends on `sQuote()` fancy quotes,
+  which are disabled in some environments (for example inside testthat).
+
+## Improved error messages
+
+* An invalid `reference` now lists the available treatment values; an unsorted
+  id column shows the sorting one-liner; an unrecognised `method` lists the
+  valid methods; covariate errors name the offending columns; `delta`/`dlag`
+  length errors state the expected length; and the "covariance matrix is not
+  positive definite" failure suggests `prior = "ridge"`, fewer covariates, or a
+  longer burn-in.
+
+## Tests
+
+* New edge-case suites cover character arms (order-preserving and
+  order-flipping labels, factor treatment variables), character ids, factor
+  covariates, an all-visits-missing participant, single-arm MAR runs, missing
+  participant-visit rows, all-zero delta equivalence, and time values starting
+  at zero.
+
 # RefBasedMI 0.3.1
 
 This release adds input validation, a `verbose` option, and a richer result

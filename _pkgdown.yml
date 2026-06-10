@@ -8,6 +8,11 @@ reference:
   desc: The main entry point.
   contents:
   - RefBasedMI
+- title: Results
+  desc: Inspecting and analysing the imputed datasets.
+  contents:
+  - print.refbasedmi
+  - as_mids
 - title: Datasets
   desc: Example clinical trial datasets.
   contents:

@@ -11,11 +11,12 @@ the inability to verify CRAN incoming feasibility when run offline).
 
 ## Notes for the maintainer
 
-* This is a fork-maintained release (0.3.1). The package bundles the archived
+* This is a fork-maintained release (0.3.2). The package bundles the archived
   `norm2` Fortran engine (Joseph L. Schafer / U.S. Census Bureau); its
   attribution is recorded in `inst/COPYRIGHTS`.
-* 0.3.1 adds input validation, a `verbose` argument, a classed result object
-  with `print()`/`summary()` methods, and an `as_mids()` helper. The
-  reference-based imputation results are unchanged: every change was verified
-  against a 14-scenario regression baseline and remains numerically identical.
-  All changes are described in `NEWS.md`.
+* 0.3.2 fixes character treatment-arm labels, character participant ids, and
+  factor covariates, and adds guidance to the error messages. The
+  reference-based imputation results for previously supported inputs are
+  unchanged: every change was verified against a 14-scenario regression
+  baseline and remains numerically identical. All changes are described in
+  `NEWS.md`.
