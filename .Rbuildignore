@@ -12,6 +12,7 @@
 ^.*\.tar\.gz$
 ^.*\.Rcheck$
 ^\.lintr$
+^\.claude$
 ^_pkgdown\.yml$
 ^docs$
 ^pkgdown$

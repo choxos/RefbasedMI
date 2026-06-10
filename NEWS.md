@@ -1,3 +1,52 @@
+# RefBasedMI 0.3.1
+
+This release adds input validation, a `verbose` option, and a richer result
+object on top of 0.3.0. The reference-based imputation results for the supported
+group-level methods are unchanged: every change was verified against the
+14-scenario regression baseline and remains numerically identical.
+
+## New features
+
+* `RefBasedMI()` gains a `verbose` argument (default `TRUE`). Set `verbose =
+  FALSE` to run silently, which is convenient when calling the function in a
+  loop, for example over a delta sensitivity grid.
+* The result is now a data frame of class `"refbasedmi"` carrying the run
+  settings as attributes, with `print()` and `summary()` methods. `summary()`
+  reports the settings together with the number of remaining missing outcome
+  values in each imputed dataset.
+* New exported `as_mids()` helper wraps `mice::as.mids()` so the imputations can
+  be pooled by Rubin's rules in one call.
+
+## Bug fixes
+
+* The Causal model no longer errors when `K0` or `K1` is passed as an explicit
+  `NULL`. When `K0 = 0` the decay constant `K1` may be omitted, as documented;
+  this configuration now reproduces jump-to-reference exactly (previously it
+  failed with "argument is of length zero").
+* A non-integer `M` is rejected instead of silently truncating the
+  parameter-draw index, which could select another arm's posterior draw in
+  trials with three or more arms.
+* The internally generated Fortran seeds are floored at 1, since `runif()` can in
+  principle return 0.
+* The `mle` argument is validated as a scalar, avoiding a length-mismatch error
+  under R >= 4.2.
+
+## Input validation
+
+* `M`, `burnin`, and `bbetween` must be positive integers; `delta` and `dlag`
+  must be numeric; `depvar` and `timevar` columns must be numeric.
+* Missing values in the treatment, identifier, or time variables, and duplicated
+  identifier-by-time rows (which `reshape()` would silently drop), are rejected
+  at entry with a clear message.
+* Supplying `K0` or `K1` with a non-Causal method now warns rather than being
+  silently ignored.
+
+## Documentation
+
+* The getting-started vignette gains a section on choosing the number of
+  imputations, the MCMC burn-in and spacing, and the seed, with a worked
+  seed-sensitivity check.
+
 # RefBasedMI 0.3.0
 
 This is a maintenance and reliability release. The reference-based imputation
