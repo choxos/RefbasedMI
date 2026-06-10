@@ -11,6 +11,7 @@ Imputation of missing numerical outcomes for a longitudinal trial with protocol 
 Useful links:
 \itemize{
   \item \url{https://github.com/choxos/RefbasedMI}
+  \item \url{https://choxos.github.io/RefbasedMI/}
   \item Report bugs at \url{https://github.com/choxos/RefbasedMI/issues}
 }
 

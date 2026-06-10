@@ -114,6 +114,11 @@
 #' @param mle Logical; if `TRUE`, impute improperly by drawing from the maximum
 #'   likelihood estimates instead of a posterior draw. Use with extreme caution:
 #'   it ignores parameter uncertainty and invalidates Rubin's-rules intervals.
+#' @param verbose Logical; if `TRUE` (the default) the function reports its
+#'   progress, including the missing-data pattern summary and per-pattern
+#'   imputation messages. Set to `FALSE` to run silently, which is convenient
+#'   when calling `RefBasedMI()` repeatedly, for example over a sensitivity
+#'   grid.
 #'
 #' @return A data frame in long format stacking the original data (`.imp = 0`)
 #'   above the `M` imputed datasets (`.imp = 1, ..., M`). The `.imp` column
