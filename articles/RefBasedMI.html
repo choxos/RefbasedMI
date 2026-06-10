@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">RefBasedMI</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -156,14 +156,28 @@ datasets.</p>
 <p>The result is in long format: the original data
 (<code>.imp = 0</code>) stacked above the <code>M</code> imputed
 datasets (<code>.imp = 1, ..., M</code>). Observed values are unchanged;
-only the post-deviation missing values are filled in.</p>
+only the post-deviation missing values are filled in.
+<code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> reports the run settings and confirms that every
+imputed dataset is complete:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">imp</span><span class="op">)</span></span>
+<span><span class="co">#&gt; RefBasedMI imputed data</span></span>
+<span><span class="co">#&gt;   Method:      J2R</span></span>
+<span><span class="co">#&gt;   Reference:   1</span></span>
+<span><span class="co">#&gt;   Imputations: M = 5</span></span>
+<span><span class="co">#&gt;   Rows:        4392 (long format, .imp = 0 is the original data)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Missing 'fev' values by imputation number:</span></span>
+<span><span class="co">#&gt;   0   1   2   3   4   5 </span></span>
+<span><span class="co">#&gt; 147   0   0   0   0   0</span></span></code></pre></div>
 <div class="section level3">
 <h3 id="analysis-with-rubins-rules">Analysis with Rubin’s rules<a class="anchor" aria-label="anchor" href="#analysis-with-rubins-rules"></a>
 </h3>
 <p>The output is designed to be turned into a <code>mids</code> object
-with the <strong>mice</strong> package and pooled:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/with.html" class="external-link">with</a></span><span class="op">(</span><span class="fu">mice</span><span class="fu">::</span><span class="fu"><a href="https://amices.org/mice/reference/as.mids.html" class="external-link">as.mids</a></span><span class="op">(</span><span class="va">imp</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">fev</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">treat</span><span class="op">)</span>, subset <span class="op">=</span> <span class="op">(</span><span class="va">time</span> <span class="op">==</span> <span class="fl">12</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+and pooled. The exported <code><a href="../reference/as_mids.html">as_mids()</a></code> helper wraps
+<code><a href="https://amices.org/mice/reference/as.mids.html" class="external-link">mice::as.mids()</a></code>:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/with.html" class="external-link">with</a></span><span class="op">(</span><span class="fu"><a href="../reference/as_mids.html">as_mids</a></span><span class="op">(</span><span class="va">imp</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">fev</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">treat</span><span class="op">)</span>, subset <span class="op">=</span> <span class="op">(</span><span class="va">time</span> <span class="op">==</span> <span class="fl">12</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu">mice</span><span class="fu">::</span><span class="fu"><a href="https://amices.org/mice/reference/pool.html" class="external-link">pool</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;             term  estimate std.error statistic       df      p.value</span></span>
 <span><span class="co">#&gt; 1    (Intercept) 1.8864398 0.1048109 17.998506 17.77053 7.464593e-13</span></span>
@@ -176,7 +190,7 @@ with the <strong>mice</strong> package and pooled:</p>
 <p>Because the methods differ only in their assumption about deviating
 patients, it is instructive to compare the imputed week-12 means across
 methods using the same seed.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># RefBasedMI captures `method` by non-standard evaluation, so splice the literal</span></span>
 <span><span class="co"># method string into the call with bquote() rather than passing a loop variable.</span></span>
 <span><span class="va">impute_method</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">m</span><span class="op">)</span> <span class="op">{</span></span>
@@ -208,7 +222,7 @@ treatment effect after deviation is a fraction <code>K0</code> of the
 last on-treatment effect, decaying geometrically by <code>K1</code> each
 period: <code>K0 = 1, K1 = 0</code> reproduces J2R and
 <code>K0 = 1, K1 = 1</code> reproduces CIR.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">acu</span> <span class="op">&lt;-</span> <span class="fu">impute</span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">acupuncture</span>, depvar <span class="op">=</span> <span class="va">head</span>, treatvar <span class="op">=</span> <span class="va">treat</span>, idvar <span class="op">=</span> <span class="va">id</span>, timevar <span class="op">=</span> <span class="va">time</span>,</span>
 <span>  covar <span class="op">=</span> <span class="va">head_base</span>, method <span class="op">=</span> <span class="st">"Causal"</span>, reference <span class="op">=</span> <span class="fl">1</span>, K0 <span class="op">=</span> <span class="fl">1</span>, K1 <span class="op">=</span> <span class="fl">0.5</span>,</span>
@@ -225,7 +239,7 @@ imputations (but not to interim missing values), for tipping-point and
 sensitivity analyses. <code>delta</code> gives the per-period increments
 and <code>dlag</code> weights them. A constant shift of <code>-1</code>
 at the first post-deviation visit, accruing thereafter, is:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">impD</span> <span class="op">&lt;-</span> <span class="fu">impute</span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">asthma</span>, depvar <span class="op">=</span> <span class="va">fev</span>, treatvar <span class="op">=</span> <span class="va">treat</span>, idvar <span class="op">=</span> <span class="va">id</span>, timevar <span class="op">=</span> <span class="va">time</span>,</span>
 <span>  covar <span class="op">=</span> <span class="va">base</span>, method <span class="op">=</span> <span class="st">"J2R"</span>, reference <span class="op">=</span> <span class="fl">2</span>,</span>
@@ -244,22 +258,66 @@ uses the reference-based assumption. This matches the <em>mimix</em>
 behaviour and requires no special handling from the user.</p>
 </div>
 <div class="section level2">
-<h2 id="practical-guidance">Practical guidance<a class="anchor" aria-label="anchor" href="#practical-guidance"></a>
+<h2 id="choosing-m-burnin-and-the-seed">Choosing M, burnin, and the seed<a class="anchor" aria-label="anchor" href="#choosing-m-burnin-and-the-seed"></a>
+</h2>
+<p>The examples in this vignette use <code>M = 5</code> (and
+<code>M = 2</code> in the help pages) so they run quickly, but real
+analyses need more.</p>
+<ul>
+<li>
+<strong>Number of imputations (<code>M</code>).</strong> The Monte
+Carlo error of a pooled estimate falls as <code>M</code> grows. A common
+rule of thumb is to take <code>M</code> at least as large as the
+percentage fraction of missing information, which in trials with
+substantial post-deviation missingness often means 50 or more. Too small
+an <code>M</code> leaves the standard errors themselves noisy.</li>
+<li>
+<strong>Burn-in (<code>burnin</code>) and spacing
+(<code>bbetween</code>).</strong> Each arm’s multivariate normal
+parameters are drawn by the <em>norm2</em> MCMC sampler.
+<code>burnin</code> is the number of iterations discarded before the
+first draw; <code>bbetween</code> (defaulting to <code>burnin</code>) is
+the number of iterations between successive imputations, so that the
+<code>M</code> parameter draws are approximately independent. The
+defaults are generous for the small number of repeated measures typical
+of these trials; increase them if a trial has many time points or the
+sampler reports a near-boundary solution.</li>
+<li>
+<strong>Reproducibility (<code>seed</code>).</strong>
+<code>seed</code> defaults to <code>NULL</code>, so imputations are
+random each run. Pass an integer for a reproducible result.</li>
+</ul>
+<p>A simple check that <code>M</code> is large enough is to repeat the
+whole imputation under a few different seeds and confirm that the pooled
+estimate barely moves:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">wk12_estimate</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">seed</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">imp</span> <span class="op">&lt;-</span> <span class="fu">impute</span><span class="op">(</span></span>
+<span>    data <span class="op">=</span> <span class="va">asthma</span>, depvar <span class="op">=</span> <span class="va">fev</span>, treatvar <span class="op">=</span> <span class="va">treat</span>, idvar <span class="op">=</span> <span class="va">id</span>, timevar <span class="op">=</span> <span class="va">time</span>,</span>
+<span>    covar <span class="op">=</span> <span class="va">base</span>, method <span class="op">=</span> <span class="st">"J2R"</span>, reference <span class="op">=</span> <span class="fl">1</span>, M <span class="op">=</span> <span class="fl">20</span>, seed <span class="op">=</span> <span class="va">seed</span>,</span>
+<span>    verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  <span class="op">)</span></span>
+<span>  <span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/with.html" class="external-link">with</a></span><span class="op">(</span><span class="fu"><a href="../reference/as_mids.html">as_mids</a></span><span class="op">(</span><span class="va">imp</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">fev</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">treat</span><span class="op">)</span>, subset <span class="op">=</span> <span class="op">(</span><span class="va">time</span> <span class="op">==</span> <span class="fl">12</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/unname.html" class="external-link">unname</a></span><span class="op">(</span><span class="fu">mice</span><span class="fu">::</span><span class="fu"><a href="https://amices.org/mice/reference/pool.html" class="external-link">pool</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span><span class="op">$</span><span class="va">pooled</span><span class="op">[[</span><span class="st">"estimate"</span><span class="op">]</span><span class="op">]</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">101</span>, <span class="fl">202</span>, <span class="fl">303</span><span class="op">)</span>, <span class="va">wk12_estimate</span>, <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">numeric</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 0.220 0.223 0.214</span></span></code></pre></div>
+<p>If those estimates differ materially, increase <code>M</code>.</p>
+</div>
+<div class="section level2">
+<h2 id="other-practical-points">Other practical points<a class="anchor" aria-label="anchor" href="#other-practical-points"></a>
 </h2>
 <ul>
 <li>
-<strong>Seed.</strong> <code>seed</code> defaults to
-<code>NULL</code>, so imputations are random each run. Pass an integer
-for reproducibility.</li>
-<li>
 <strong>Baseline.</strong> Supply the baseline outcome as a
 covariate (<code>covar</code>) rather than as an outcome value, so that
-no treatment effect is assumed at baseline.</li>
+no treatment effect is assumed at baseline. Factor covariates are
+accepted and expanded internally.</li>
 <li>
-<strong>MCMC settings.</strong> <code>burnin</code> controls the
-number of burn-in iterations when fitting the multivariate normal model;
-the default is generally adequate. Increase <code>M</code> for more
-stable pooled inference.</li>
+<strong>Silencing progress.</strong> Pass
+<code>verbose = FALSE</code> to suppress the per-pattern progress
+messages, which is convenient inside loops such as the seed check
+above.</li>
 <li>
 <strong>Individual-specific methods.</strong> Assigning a different
 method per patient via <code>methodvar</code>/<code>referencevar</code>

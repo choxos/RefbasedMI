@@ -49,7 +49,10 @@ RefBasedMI(
 
   Baseline covariate(s) given as a name or character vector; must be
   complete (no missing values) and numeric or factor. Typically the
-  baseline outcome.
+  baseline outcome. Factor covariates are expanded to dummy columns
+  through
+  [`stats::model.matrix()`](https://rdrr.io/r/stats/model.matrix.html)
+  before the model is fitted.
 
 - depvar:
 
@@ -93,12 +96,15 @@ RefBasedMI(
 - K0:
 
   Causal model constant (the maintained fraction of the treatment
-  effect); used with `method = "Causal"`.
+  effect); used with `method = "Causal"`. `K0 = 0` reproduces
+  jump-to-reference and `K0 = 1` reproduces
+  copy-increments-in-reference.
 
 - K1:
 
   Causal model decay constant in \[0, 1\]; the maintained effect decays
-  by `K1` each period. Used with `method = "Causal"`.
+  by `K1` each period. Used with `method = "Causal"`. May be omitted
+  when `K0 = 0`, since the decay term is then switched off.
 
 - delta:
 
@@ -112,7 +118,10 @@ RefBasedMI(
 
 - M:
 
-  Number of imputations to create.
+  Number of imputations to create. Small values (the examples use
+  `M = 2` only to run quickly) give unstable standard errors; use a
+  larger `M`, of the order of the percentage fraction of missing
+  information, for reported analyses.
 
 - seed:
 
@@ -150,13 +159,19 @@ RefBasedMI(
 
 ## Value
 
-A data frame in long format stacking the original data (`.imp = 0`)
-above the `M` imputed datasets (`.imp = 1, ..., M`). The `.imp` column
-identifies the imputation and the participant identifier is retained.
-Observed values are unchanged; only post-discontinuation (and interim)
-missing outcomes are filled in. Pass the result to
-[`mice::as.mids()`](https://amices.org/mice/reference/as.mids.html) to
-analyse by Rubin's rules.
+A data frame of class `"refbasedmi"` in long format stacking the
+original data (`.imp = 0`) above the `M` imputed datasets
+(`.imp = 1, ..., M`). The `.imp` column identifies the imputation and
+the participant identifier is retained. Observed values are unchanged;
+only post-discontinuation (and interim) missing outcomes are filled in.
+The run settings are stored as attributes and shown by
+[print()](https://choxos.github.io/RefbasedMI/reference/print.refbasedmi.md)
+and
+[summary()](https://choxos.github.io/RefbasedMI/reference/print.refbasedmi.md).
+Pass the result to
+[`as_mids()`](https://choxos.github.io/RefbasedMI/reference/as_mids.md)
+(or [`mice::as.mids()`](https://amices.org/mice/reference/as.mids.html))
+to analyse by Rubin's rules.
 
 ## Estimands and reference-based imputation
 

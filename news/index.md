@@ -1,5 +1,116 @@
 # Changelog
 
+## RefBasedMI 0.3.2
+
+This release makes character treatment-arm labels, character participant
+ids, and factor covariates work end to end, and adds guidance to the
+error messages. The imputation results for previously supported inputs
+are unchanged (all 14 regression baseline scenarios remain
+byte-identical).
+
+### Bug fixes
+
+- Character treatment-arm labels (for example `"Placebo"` and drug
+  names) previously crashed with
+  `invalid 'labels'; length k should be 1 or 0` after
+  `NAs introduced by coercion` warnings, and the missing-data pattern
+  summary displayed the treatment column as `NA`. The internal numeric
+  round-trip now runs only for arms whose labels parse as numbers;
+  character labels keep their internal codes and are restored on output,
+  and the pattern summary shows the real arm names.
+- Character participant ids crashed in the interim-imputation machinery
+  (data was round-tripped through
+  [`as.matrix()`](https://rdrr.io/r/base/matrix.html), coercing every
+  column to character). Ids are now recoded to integers internally and
+  restored on output; with ids of equal sort order the imputed values
+  are identical to a numeric-id run.
+- Factor covariates, documented as supported, crashed in the
+  conditional-draw arithmetic. They are now expanded into numeric dummy
+  columns on entry (matching the
+  [`model.matrix()`](https://rdrr.io/r/stats/model.matrix.html) design)
+  and the helper columns are removed from the returned dataset; a factor
+  covariate reproduces its manual dummy encoding exactly.
+- `covar = c(...)` detection no longer depends on
+  [`sQuote()`](https://rdrr.io/r/base/sQuote.html) fancy quotes, which
+  are disabled in some environments (for example inside testthat).
+
+### Improved error messages
+
+- An invalid `reference` now lists the available treatment values; an
+  unsorted id column shows the sorting one-liner; an unrecognised
+  `method` lists the valid methods; covariate errors name the offending
+  columns; `delta`/`dlag` length errors state the expected length; and
+  the “covariance matrix is not positive definite” failure suggests
+  `prior = "ridge"`, fewer covariates, or a longer burn-in.
+
+### Tests
+
+- New edge-case suites cover character arms (order-preserving and
+  order-flipping labels, factor treatment variables), character ids,
+  factor covariates, an all-visits-missing participant, single-arm MAR
+  runs, missing participant-visit rows, all-zero delta equivalence, and
+  time values starting at zero.
+
+## RefBasedMI 0.3.1
+
+This release adds input validation, a `verbose` option, and a richer
+result object on top of 0.3.0. The reference-based imputation results
+for the supported group-level methods are unchanged: every change was
+verified against the 14-scenario regression baseline and remains
+numerically identical.
+
+### New features
+
+- [`RefBasedMI()`](https://choxos.github.io/RefbasedMI/reference/RefBasedMI.md)
+  gains a `verbose` argument (default `TRUE`). Set `verbose = FALSE` to
+  run silently, which is convenient when calling the function in a loop,
+  for example over a delta sensitivity grid.
+- The result is now a data frame of class `"refbasedmi"` carrying the
+  run settings as attributes, with
+  [`print()`](https://rdrr.io/r/base/print.html) and
+  [`summary()`](https://rdrr.io/r/base/summary.html) methods.
+  [`summary()`](https://rdrr.io/r/base/summary.html) reports the
+  settings together with the number of remaining missing outcome values
+  in each imputed dataset.
+- New exported
+  [`as_mids()`](https://choxos.github.io/RefbasedMI/reference/as_mids.md)
+  helper wraps
+  [`mice::as.mids()`](https://amices.org/mice/reference/as.mids.html) so
+  the imputations can be pooled by Rubin’s rules in one call.
+
+### Bug fixes
+
+- The Causal model no longer errors when `K0` or `K1` is passed as an
+  explicit `NULL`. When `K0 = 0` the decay constant `K1` may be omitted,
+  as documented; this configuration now reproduces jump-to-reference
+  exactly (previously it failed with “argument is of length zero”).
+- A non-integer `M` is rejected instead of silently truncating the
+  parameter-draw index, which could select another arm’s posterior draw
+  in trials with three or more arms.
+- The internally generated Fortran seeds are floored at 1, since
+  [`runif()`](https://rdrr.io/r/stats/Uniform.html) can in principle
+  return 0.
+- The `mle` argument is validated as a scalar, avoiding a
+  length-mismatch error under R \>= 4.2.
+
+### Input validation
+
+- `M`, `burnin`, and `bbetween` must be positive integers; `delta` and
+  `dlag` must be numeric; `depvar` and `timevar` columns must be
+  numeric.
+- Missing values in the treatment, identifier, or time variables, and
+  duplicated identifier-by-time rows (which
+  [`reshape()`](https://rdrr.io/r/stats/reshape.html) would silently
+  drop), are rejected at entry with a clear message.
+- Supplying `K0` or `K1` with a non-Causal method now warns rather than
+  being silently ignored.
+
+### Documentation
+
+- The getting-started vignette gains a section on choosing the number of
+  imputations, the MCMC burn-in and spacing, and the seed, with a worked
+  seed-sensitivity check.
+
 ## RefBasedMI 0.3.0
 
 This is a maintenance and reliability release. The reference-based

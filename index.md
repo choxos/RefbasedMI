@@ -77,19 +77,37 @@ asthmaJ2R <- RefBasedMI(
 ```
 
 `seed` defaults to `NULL` (imputations are random each run); pass an
-integer for reproducibility.
+integer for reproducibility. Pass `verbose = FALSE` to suppress the
+progress messages, which is convenient inside loops.
+
+The result is a classed data frame;
+[`summary()`](https://rdrr.io/r/base/summary.html) reports the run
+settings and the number of remaining missing values per imputation:
+
+``` r
+
+summary(asthmaJ2R)
+```
 
 ### Analysis with Rubin’s rules
 
 The output stacks the original data (`.imp = 0`) above the `M` imputed
-sets. Convert it to a `mids` object with **mice** and pool:
+sets. Convert it to a `mids` object with the exported
+[`as_mids()`](https://choxos.github.io/RefbasedMI/reference/as_mids.md)
+helper (a thin wrapper around
+[`mice::as.mids()`](https://amices.org/mice/reference/as.mids.html)) and
+pool:
 
 ``` r
 
 library(mice)
-fit <- with(as.mids(asthmaJ2R), lm(fev ~ factor(treat), subset = (time == 12)))
+fit <- with(as_mids(asthmaJ2R), lm(fev ~ factor(treat), subset = (time == 12)))
 summary(pool(fit))
 ```
+
+See
+[`vignette("RefBasedMI")`](https://choxos.github.io/RefbasedMI/articles/RefBasedMI.md)
+for guidance on choosing `M`, `burnin`, and the seed.
 
 ### Causal model
 

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">RefBasedMI</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,6 +38,55 @@
       <small>Source: <a href="https://github.com/choxos/RefbasedMI/blob/master/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.3.2" id="refbasedmi-032">RefBasedMI 0.3.2<a class="anchor" aria-label="anchor" href="#refbasedmi-032"></a></h2>
+<p>This release makes character treatment-arm labels, character participant ids, and factor covariates work end to end, and adds guidance to the error messages. The imputation results for previously supported inputs are unchanged (all 14 regression baseline scenarios remain byte-identical).</p>
+<div class="section level3">
+<h3 id="bug-fixes-0-3-2">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-3-2"></a></h3>
+<ul><li>Character treatment-arm labels (for example <code>"Placebo"</code> and drug names) previously crashed with <code>invalid 'labels'; length k should be 1 or 0</code> after <code>NAs introduced by coercion</code> warnings, and the missing-data pattern summary displayed the treatment column as <code>NA</code>. The internal numeric round-trip now runs only for arms whose labels parse as numbers; character labels keep their internal codes and are restored on output, and the pattern summary shows the real arm names.</li>
+<li>Character participant ids crashed in the interim-imputation machinery (data was round-tripped through <code><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix()</a></code>, coercing every column to character). Ids are now recoded to integers internally and restored on output; with ids of equal sort order the imputed values are identical to a numeric-id run.</li>
+<li>Factor covariates, documented as supported, crashed in the conditional-draw arithmetic. They are now expanded into numeric dummy columns on entry (matching the <code><a href="https://rdrr.io/r/stats/model.matrix.html" class="external-link">model.matrix()</a></code> design) and the helper columns are removed from the returned dataset; a factor covariate reproduces its manual dummy encoding exactly.</li>
+<li>
+<code>covar = c(...)</code> detection no longer depends on <code><a href="https://rdrr.io/r/base/sQuote.html" class="external-link">sQuote()</a></code> fancy quotes, which are disabled in some environments (for example inside testthat).</li>
+</ul></div>
+<div class="section level3">
+<h3 id="improved-error-messages-0-3-2">Improved error messages<a class="anchor" aria-label="anchor" href="#improved-error-messages-0-3-2"></a></h3>
+<ul><li>An invalid <code>reference</code> now lists the available treatment values; an unsorted id column shows the sorting one-liner; an unrecognised <code>method</code> lists the valid methods; covariate errors name the offending columns; <code>delta</code>/<code>dlag</code> length errors state the expected length; and the “covariance matrix is not positive definite” failure suggests <code>prior = "ridge"</code>, fewer covariates, or a longer burn-in.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="tests-0-3-2">Tests<a class="anchor" aria-label="anchor" href="#tests-0-3-2"></a></h3>
+<ul><li>New edge-case suites cover character arms (order-preserving and order-flipping labels, factor treatment variables), character ids, factor covariates, an all-visits-missing participant, single-arm MAR runs, missing participant-visit rows, all-zero delta equivalence, and time values starting at zero.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.3.1" id="refbasedmi-031">RefBasedMI 0.3.1<a class="anchor" aria-label="anchor" href="#refbasedmi-031"></a></h2>
+<p>This release adds input validation, a <code>verbose</code> option, and a richer result object on top of 0.3.0. The reference-based imputation results for the supported group-level methods are unchanged: every change was verified against the 14-scenario regression baseline and remains numerically identical.</p>
+<div class="section level3">
+<h3 id="new-features-0-3-1">New features<a class="anchor" aria-label="anchor" href="#new-features-0-3-1"></a></h3>
+<ul><li>
+<code><a href="../reference/RefBasedMI.html">RefBasedMI()</a></code> gains a <code>verbose</code> argument (default <code>TRUE</code>). Set <code>verbose = FALSE</code> to run silently, which is convenient when calling the function in a loop, for example over a delta sensitivity grid.</li>
+<li>The result is now a data frame of class <code>"refbasedmi"</code> carrying the run settings as attributes, with <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> and <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> methods. <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> reports the settings together with the number of remaining missing outcome values in each imputed dataset.</li>
+<li>New exported <code><a href="../reference/as_mids.html">as_mids()</a></code> helper wraps <code><a href="https://amices.org/mice/reference/as.mids.html" class="external-link">mice::as.mids()</a></code> so the imputations can be pooled by Rubin’s rules in one call.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-0-3-1">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-3-1"></a></h3>
+<ul><li>The Causal model no longer errors when <code>K0</code> or <code>K1</code> is passed as an explicit <code>NULL</code>. When <code>K0 = 0</code> the decay constant <code>K1</code> may be omitted, as documented; this configuration now reproduces jump-to-reference exactly (previously it failed with “argument is of length zero”).</li>
+<li>A non-integer <code>M</code> is rejected instead of silently truncating the parameter-draw index, which could select another arm’s posterior draw in trials with three or more arms.</li>
+<li>The internally generated Fortran seeds are floored at 1, since <code><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif()</a></code> can in principle return 0.</li>
+<li>The <code>mle</code> argument is validated as a scalar, avoiding a length-mismatch error under R &gt;= 4.2.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="input-validation-0-3-1">Input validation<a class="anchor" aria-label="anchor" href="#input-validation-0-3-1"></a></h3>
+<ul><li>
+<code>M</code>, <code>burnin</code>, and <code>bbetween</code> must be positive integers; <code>delta</code> and <code>dlag</code> must be numeric; <code>depvar</code> and <code>timevar</code> columns must be numeric.</li>
+<li>Missing values in the treatment, identifier, or time variables, and duplicated identifier-by-time rows (which <code><a href="https://rdrr.io/r/stats/reshape.html" class="external-link">reshape()</a></code> would silently drop), are rejected at entry with a clear message.</li>
+<li>Supplying <code>K0</code> or <code>K1</code> with a non-Causal method now warns rather than being silently ignored.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="documentation-0-3-1">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-3-1"></a></h3>
+<ul><li>The getting-started vignette gains a section on choosing the number of imputations, the MCMC burn-in and spacing, and the seed, with a worked seed-sensitivity check.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.0" id="refbasedmi-030">RefBasedMI 0.3.0<a class="anchor" aria-label="anchor" href="#refbasedmi-030"></a></h2>
 <p>This is a maintenance and reliability release. The reference-based imputation results for the supported group-level methods (MAR, J2R, CR, CIR, LMCF, Causal) are unchanged: every change below was verified against a 14-scenario regression baseline captured from version 0.2.0, and all scenarios remain numerically identical unless noted.</p>

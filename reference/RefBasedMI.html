@@ -21,7 +21,7 @@ It is an R port of the Stata program mimix by Suzie Cro."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">RefBasedMI</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -103,7 +103,8 @@ participant-time), sorted by participant.</p></dd>
 <dt id="arg-covar">covar<a class="anchor" aria-label="anchor" href="#arg-covar"></a></dt>
 <dd><p>Baseline covariate(s) given as a name or character vector; must be
 complete (no missing values) and numeric or factor. Typically the baseline
-outcome.</p></dd>
+outcome. Factor covariates are expanded to dummy columns through
+<code><a href="https://rdrr.io/r/stats/model.matrix.html" class="external-link">stats::model.matrix()</a></code> before the model is fitted.</p></dd>
 
 
 <dt id="arg-depvar">depvar<a class="anchor" aria-label="anchor" href="#arg-depvar"></a></dt>
@@ -147,12 +148,14 @@ supported in this release (see <code>methodvar</code>).</p></dd>
 
 <dt id="arg-k-">K0<a class="anchor" aria-label="anchor" href="#arg-k-"></a></dt>
 <dd><p>Causal model constant (the maintained fraction of the treatment
-effect); used with <code>method = "Causal"</code>.</p></dd>
+effect); used with <code>method = "Causal"</code>. <code>K0 = 0</code> reproduces jump-to-reference
+and <code>K0 = 1</code> reproduces copy-increments-in-reference.</p></dd>
 
 
 <dt id="arg-k-">K1<a class="anchor" aria-label="anchor" href="#arg-k-"></a></dt>
 <dd><p>Causal model decay constant in [0, 1]; the maintained effect decays
-by <code>K1</code> each period. Used with <code>method = "Causal"</code>.</p></dd>
+by <code>K1</code> each period. Used with <code>method = "Causal"</code>. May be omitted when
+<code>K0 = 0</code>, since the decay term is then switched off.</p></dd>
 
 
 <dt id="arg-delta">delta<a class="anchor" aria-label="anchor" href="#arg-delta"></a></dt>
@@ -166,7 +169,10 @@ length equal to the number of time points; defaults to all ones.</p></dd>
 
 
 <dt id="arg-m">M<a class="anchor" aria-label="anchor" href="#arg-m"></a></dt>
-<dd><p>Number of imputations to create.</p></dd>
+<dd><p>Number of imputations to create. Small values (the examples use
+<code>M = 2</code> only to run quickly) give unstable standard errors; use a larger
+<code>M</code>, of the order of the percentage fraction of missing information, for
+reported analyses.</p></dd>
 
 
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
@@ -204,12 +210,14 @@ grid.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A data frame in long format stacking the original data (<code>.imp = 0</code>)
-above the <code>M</code> imputed datasets (<code>.imp = 1, ..., M</code>). The <code>.imp</code> column
-identifies the imputation and the participant identifier is retained.
-Observed values are unchanged; only post-discontinuation (and interim)
-missing outcomes are filled in. Pass the result to <code><a href="https://amices.org/mice/reference/as.mids.html" class="external-link">mice::as.mids()</a></code> to
-analyse by Rubin's rules.</p>
+    <p>A data frame of class <code>"refbasedmi"</code> in long format stacking the
+original data (<code>.imp = 0</code>) above the <code>M</code> imputed datasets
+(<code>.imp = 1, ..., M</code>). The <code>.imp</code> column identifies the imputation and the
+participant identifier is retained. Observed values are unchanged; only
+post-discontinuation (and interim) missing outcomes are filled in. The run
+settings are stored as attributes and shown by
+<a href="print.refbasedmi.html">print()</a> and <a href="print.refbasedmi.html">summary()</a>. Pass the
+result to <code><a href="as_mids.html">as_mids()</a></code> (or <code><a href="https://amices.org/mice/reference/as.mids.html" class="external-link">mice::as.mids()</a></code>) to analyse by Rubin's rules.</p>
     </div>
     <div class="section level2">
     <h2 id="estimands-and-reference-based-imputation">Estimands and reference-based imputation<a class="anchor" aria-label="anchor" href="#estimands-and-reference-based-imputation"></a></h2>
